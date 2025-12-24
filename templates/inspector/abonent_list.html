@@ -1,0 +1,98 @@
+{% extends "inspector/base.html" %}
+
+{% block title %}Abonentlar{% endblock %}
+
+{% block content %}
+<!-- Search -->
+<div class="search-wrapper">
+    <i class="fas fa-search"></i>
+    <form method="get" action="">
+        <input type="search" name="q" class="search-input" placeholder="Qidirish: ism, familiya, PINFL..."
+            value="{{ search_query|default:'' }}">
+    </form>
+</div>
+
+<!-- Results count -->
+<p style="color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1rem;">
+    {% if search_query %}
+    "{{ search_query }}" uchun {{ page_obj.paginator.count }} ta natija
+    {% else %}
+    Jami: {{ page_obj.paginator.count }} ta abonent
+    {% endif %}
+</p>
+
+<!-- Abonent List -->
+<div class="card">
+    {% if abonents %}
+    <ul class="abonent-list">
+        {% for abonent in abonents %}
+        <li class="abonent-item">
+            {% if abonent.rasm %}
+            <img src="{{ abonent.rasm.url }}" alt="{{ abonent.ism }}" class="abonent-avatar">
+            {% else %}
+            <div class="abonent-avatar"
+                style="background: var(--gray-200); display: flex; align-items: center; justify-content: center; color: var(--gray-500);">
+                <i class="fas fa-user"></i>
+            </div>
+            {% endif %}
+            <div class="abonent-info">
+                <div class="abonent-name">{{ abonent.familiya }} {{ abonent.ism }}</div>
+                <div class="abonent-meta">
+                    <i class="fas fa-id-badge"></i> {{ abonent.abonent_kod }}<br>
+                    <i class="fas fa-fingerprint"></i> {{ abonent.pinfl }}
+                </div>
+            </div>
+            <div class="abonent-actions">
+                <a href="{% url 'inspector-abonent-edit' abonent.id %}" class="action-btn action-btn-edit">
+                    <i class="fas fa-pen"></i>
+                </a>
+                <a href="{% url 'inspector-abonent-delete' abonent.id %}" class="action-btn action-btn-delete">
+                    <i class="fas fa-trash"></i>
+                </a>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+            class="page-btn">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="page-btn active">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <a
+            href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ num }}" class="page-btn">{{ num }}</a>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}"
+                class="page-btn">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-search"></i>
+        <h3>{% if search_query %}Natija topilmadi{% else %}Abonentlar yo'q{% endif %}</h3>
+        <p>{% if search_query %}Boshqa so'z bilan qidirib ko'ring{% else %}Yangi abonent qo'shish uchun pastdagi tugmani
+            bosing{% endif %}</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Floating Action Button -->
+<a href="{% url 'inspector-abonent-add' %}" class="fab">
+    <i class="fas fa-plus"></i>
+</a>
+{% endblock %}

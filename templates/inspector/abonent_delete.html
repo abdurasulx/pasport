@@ -1,0 +1,54 @@
+{% extends "inspector/base.html" %}
+
+{% block title %}O'chirish{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header" style="background: #FEE2E2;">
+        <h2 style="color: #991B1B;">
+            <i class="fas fa-exclamation-triangle"></i>
+            O'chirishni tasdiqlash
+        </h2>
+    </div>
+    <div class="card-body" style="text-align: center; padding: 2rem;">
+        <!-- Abonent info -->
+        {% if abonent.rasm %}
+        <img src="{{ abonent.rasm.url }}" alt="{{ abonent.ism }}"
+            style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid var(--gray-200); margin-bottom: 1rem;">
+        {% else %}
+        <div
+            style="width: 100px; height: 100px; border-radius: 50%; background: var(--gray-200); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem; color: var(--gray-400);">
+            <i class="fas fa-user"></i>
+        </div>
+        {% endif %}
+
+        <h3 style="color: var(--gray-800); margin-bottom: 0.5rem;">
+            {{ abonent.familiya }} {{ abonent.ism }}
+        </h3>
+        <p style="color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1.5rem;">
+            <i class="fas fa-id-badge"></i> {{ abonent.abonent_kod }} ·
+            <i class="fas fa-fingerprint"></i> {{ abonent.pinfl }}
+        </p>
+
+        <div class="alert alert-warning" style="text-align: left;">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Diqqat!</strong><br>
+                Bu amalni ortga qaytarib bo'lmaydi. Abonent va unga tegishli barcha ma'lumotlar o'chiriladi.
+            </div>
+        </div>
+
+        <form method="post" style="margin-top: 1.5rem;">
+            {% csrf_token %}
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="{% url 'inspector-abonent-list' %}" class="btn btn-secondary" style="flex: 1;">
+                    <i class="fas fa-arrow-left"></i> Bekor qilish
+                </a>
+                <button type="submit" class="btn btn-danger" style="flex: 1;">
+                    <i class="fas fa-trash"></i> O'chirish
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

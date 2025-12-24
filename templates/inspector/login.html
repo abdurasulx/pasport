@@ -1,0 +1,53 @@
+{% extends "inspector/base.html" %}
+
+{% block title %}Kirish{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: center; min-height: 80vh; padding: 1rem;">
+    <div class="card" style="width: 100%; max-width: 400px;">
+        <div class="card-body" style="padding: 2rem;">
+            <!-- Logo -->
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div
+                    style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-id-card" style="font-size: 2rem; color: white;"></i>
+                </div>
+                <h1 style="font-size: 1.5rem; color: var(--gray-800); margin-bottom: 0.25rem;">AbonentDataset</h1>
+                <p style="color: var(--gray-500); font-size: 0.875rem;">Inspektor tizimiga kirish</p>
+            </div>
+
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Login yoki parol noto'g'ri!</span>
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'inspector-login' %}">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label class="form-label" for="username">
+                        <i class="fas fa-user" style="margin-right: 0.5rem;"></i>Login
+                    </label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Loginni kiriting"
+                        required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">
+                        <i class="fas fa-lock" style="margin-right: 0.5rem;"></i>Parol
+                    </label>
+                    <input type="password" id="password" name="password" class="form-control"
+                        placeholder="Parolni kiriting" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.5rem;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Kirish
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

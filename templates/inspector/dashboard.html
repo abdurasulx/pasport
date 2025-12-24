@@ -1,0 +1,89 @@
+{% extends "inspector/base.html" %}
+
+{% block title %}Bosh sahifa{% endblock %}
+
+{% block content %}
+<!-- Welcome section -->
+<div style="margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.5rem; color: var(--gray-800); margin-bottom: 0.25rem;">
+        Assalomu alaykum, {{ user.first_name|default:user.username }}! 👋
+    </h1>
+    <p style="color: var(--gray-500); font-size: 0.875rem;">
+        Bugun {{ today|date:"j F, Y" }} | Abonentlar bilan ishlashni boshlang
+    </p>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card primary">
+        <div class="stat-value">{{ total_abonents }}</div>
+        <div class="stat-label">Jami abonentlar</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ today_added }}</div>
+        <div class="stat-label">Bugun qo'shilgan</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-bolt"></i> Tezkor harakatlar</h2>
+    </div>
+    <div class="card-body">
+        <a href="{% url 'inspector-abonent-add' %}" class="btn btn-primary btn-block btn-lg"
+            style="margin-bottom: 0.75rem;">
+            <i class="fas fa-plus"></i>
+            Yangi abonent qo'shish
+        </a>
+        <a href="{% url 'inspector-abonent-list' %}" class="btn btn-secondary btn-block">
+            <i class="fas fa-list"></i>
+            Barcha abonentlarni ko'rish
+        </a>
+    </div>
+</div>
+
+<!-- Recent Abonents -->
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-clock"></i> So'nggi qo'shilganlar</h2>
+        <a href="{% url 'inspector-abonent-list' %}"
+            style="color: var(--primary); font-size: 0.875rem; text-decoration: none;">
+            Barchasi <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+
+    {% if recent_abonents %}
+    <ul class="abonent-list">
+        {% for abonent in recent_abonents %}
+        <li class="abonent-item">
+            {% if abonent.rasm %}
+            <img src="{{ abonent.rasm.url }}" alt="{{ abonent.ism }}" class="abonent-avatar">
+            {% else %}
+            <div class="abonent-avatar"
+                style="background: var(--gray-200); display: flex; align-items: center; justify-content: center; color: var(--gray-500);">
+                <i class="fas fa-user"></i>
+            </div>
+            {% endif %}
+            <div class="abonent-info">
+                <div class="abonent-name">{{ abonent.familiya }} {{ abonent.ism }}</div>
+                <div class="abonent-meta">
+                    <i class="fas fa-id-badge"></i> {{ abonent.abonent_kod }} ·
+                    <i class="fas fa-calendar"></i> {{ abonent.yaratilgan_vaqt|date:"d.m.Y" }}
+                </div>
+            </div>
+            <a href="{% url 'inspector-abonent-edit' abonent.id %}" class="action-btn action-btn-edit">
+                <i class="fas fa-pen"></i>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>Hali abonentlar yo'q</h3>
+        <p>Yangi abonent qo'shish uchun yuqoridagi tugmani bosing</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
