@@ -1,0 +1,81 @@
+{% extends "admin_custom/base.html" %}
+
+{% block title %}Inspektorlar - Boshqaruv Paneli{% endblock %}
+{% block header_title %}Inspektorlar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Inspektorlar ro'yxati</h1>
+    <a href="{% url 'admin-inspektor-add' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Yangi inspektor
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Foydalanuvchi</th>
+                    <th>To'liq ism</th>
+                    <th>Tuman</th>
+                    <th>Mahallalar</th>
+                    <th>Telefon</th>
+                    <th>Holat</th>
+                    <th>Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inspektor in inspektorlar %}
+                <tr>
+                    <td>{{ inspektor.id }}</td>
+                    <td><strong>{{ inspektor.user.username }}</strong></td>
+                    <td>{{ inspektor.user.get_full_name|default:"-" }}</td>
+                    <td>{{ inspektor.tuman.nomi|default:"-" }}</td>
+                    <td>
+                        {% for m in inspektor.mahallalar.all|slice:":2" %}
+                        {{ m.nomi }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if inspektor.mahallalar.count > 2 %}
+                        <span style="color: var(--text-muted);">+{{ inspektor.mahallalar.count|add:"-2" }}</span>
+                        {% endif %}
+                        {% if inspektor.mahallalar.count == 0 %}-{% endif %}
+                    </td>
+                    <td>{{ inspektor.telefon|default:"-" }}</td>
+                    <td>
+                        {% if inspektor.is_active %}
+                        <span class="badge badge-success">Faol</span>
+                        {% else %}
+                        <span class="badge badge-danger">Nofaol</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <a href="{% url 'admin-inspektor-edit' inspektor.pk %}" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'admin-inspektor-delete' inspektor.pk %}" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="fas fa-user-tie"></i>
+                            <p>Hozircha inspektor mavjud emas</p>
+                            <a href="{% url 'admin-inspektor-add' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Yangi inspektor qo'shish
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

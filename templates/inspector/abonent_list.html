@@ -7,7 +7,7 @@
 <div class="search-wrapper">
     <i class="fas fa-search"></i>
     <form method="get" action="">
-        <input type="search" name="q" class="search-input" placeholder="Qidirish: ism, familiya, PINFL..."
+        <input type="search" name="q" class="search-input" placeholder="Qidirish: JSHIR, mahalla..."
             value="{{ search_query|default:'' }}">
     </form>
 </div>
@@ -28,7 +28,7 @@
         {% for abonent in abonents %}
         <li class="abonent-item">
             {% if abonent.rasm %}
-            <img src="{{ abonent.rasm.url }}" alt="{{ abonent.ism }}" class="abonent-avatar">
+            <img src="{{ abonent.rasm.url }}" alt="{{ abonent.pinfl }}" class="abonent-avatar">
             {% else %}
             <div class="abonent-avatar"
                 style="background: var(--gray-200); display: flex; align-items: center; justify-content: center; color: var(--gray-500);">
@@ -36,10 +36,9 @@
             </div>
             {% endif %}
             <div class="abonent-info">
-                <div class="abonent-name">{{ abonent.familiya }} {{ abonent.ism }}</div>
+                <div class="abonent-name">{{ abonent.pinfl }}</div>
                 <div class="abonent-meta">
-                    <i class="fas fa-id-badge"></i> {{ abonent.abonent_kod }}<br>
-                    <i class="fas fa-fingerprint"></i> {{ abonent.pinfl }}
+                    <i class="fas fa-map-marker-alt"></i> {{ abonent.mahalla.nomi }} ({{ abonent.tuman.nomi }})
                 </div>
             </div>
             <div class="abonent-actions">

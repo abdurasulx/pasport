@@ -1,0 +1,61 @@
+{% extends "admin_custom/base.html" %}
+
+{% block title %}Tumanlar - Boshqaruv Paneli{% endblock %}
+{% block header_title %}Tumanlar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Tumanlar ro'yxati</h1>
+    <a href="{% url 'admin-tuman-add' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Yangi tuman
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nomi</th>
+                    <th>Mahallalar soni</th>
+                    <th>Yaratilgan</th>
+                    <th>Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tuman in tumanlar %}
+                <tr>
+                    <td>{{ tuman.id }}</td>
+                    <td><strong>{{ tuman.nomi }}</strong></td>
+                    <td>{{ tuman.mahallalar.count }}</td>
+                    <td>{{ tuman.yaratilgan_vaqt|date:"d.m.Y" }}</td>
+                    <td>
+                        <div class="actions">
+                            <a href="{% url 'admin-tuman-edit' tuman.pk %}" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'admin-tuman-delete' tuman.pk %}" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <i class="fas fa-map"></i>
+                            <p>Hozircha tuman mavjud emas</p>
+                            <a href="{% url 'admin-tuman-add' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Yangi tuman qo'shish
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

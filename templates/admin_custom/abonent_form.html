@@ -1,0 +1,160 @@
+{% extends "admin_custom/base.html" %}
+
+{% block title %}{% if abonent %}Abonentni tahrirlash{% else %}Yangi abonent{% endif %} - Boshqaruv{% endblock %}
+{% block header_title %}{% if abonent %}Abonentni tahrirlash{% else %}Yangi abonent{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{% if abonent %}Abonentni tahrirlash{% else %}Yangi abonent qo'shish{% endif %}</h1>
+    <a href="{% url 'admin-abonent-list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Orqaga
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if error %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h3 style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        <i class="fas fa-fingerprint"></i> Identifikatsiya
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_pinfl">JSHIR (14 raqam) *</label>
+                        <input type="text" name="pinfl" id="id_pinfl" class="form-control"
+                            value="{{ abonent.pinfl|default:'' }}" placeholder="12345678901234" maxlength="14" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_abonent_kod">Abonent raqami</label>
+                        <input type="text" name="abonent_kod" id="id_abonent_kod" class="form-control"
+                            value="{{ abonent.abonent_kod|default:'' }}" placeholder="A-12345">
+                    </div>
+
+                    <h3 style="font-size: 0.875rem; color: var(--text-muted); margin: 1.5rem 0 1rem;">
+                        <i class="fas fa-map-marker-alt"></i> Hudud
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_tuman">Tuman *</label>
+                        <select name="tuman" id="id_tuman" class="form-control" required>
+                            <option value="">Tumanni tanlang</option>
+                            {% for tuman in tumanlar %}
+                            <option value="{{ tuman.pk }}" {% if abonent and abonent.tuman and abonent.tuman.pk == tuman.pk %}selected{% endif %}>
+                                {{ tuman.nomi }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_mahalla">Mahalla *</label>
+                        <select name="mahalla" id="id_mahalla" class="form-control" required>
+                            <option value="">Mahallani tanlang</option>
+                            {% for mahalla in mahallalar %}
+                            <option value="{{ mahalla.pk }}" 
+                                data-tuman="{{ mahalla.tuman.pk }}" 
+                                {% if abonent and abonent.mahalla and abonent.mahalla.pk == mahalla.pk %}selected{% endif %}>
+                                {{ mahalla.nomi }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_inspektor">Inspektor</label>
+                        <select name="inspektor" id="id_inspektor" class="form-control">
+                            <option value="">Inspektorni tanlang</option>
+                            {% for insp in inspektorlar %}
+                            <option value="{{ insp.pk }}" 
+                                data-tuman="{{ insp.tuman.pk }}" 
+                                {% if abonent and abonent.inspektor and abonent.inspektor.pk == insp.pk %}selected{% endif %}>
+                                {{ insp.user.get_full_name|default:insp.user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        <i class="fas fa-camera"></i> Rasm
+                    </h3>
+
+                    {% if abonent and abonent.rasm %}
+                    <div style="margin-bottom: 1rem; text-align: center;">
+                        <img src="{{ abonent.rasm.url }}"
+                            alt="Abonent rasmi"
+                            style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 12px;">
+                        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem;">Joriy rasm</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_rasm">
+                            {% if abonent %}Yangi rasm{% else %}Rasm *{% endif %}
+                        </label>
+                        <input type="file" name="rasm" id="id_rasm" class="form-control" 
+                            accept="image/*" {% if not abonent %}required{% endif %}>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                <a href="{% url 'admin-abonent-list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Bekor qilish
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {% if abonent %}Saqlash{% else %}Qo'shish{% endif %}
+                </button>
+            </div>
+            
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('id_tuman').addEventListener('change', function () {
+        var selectedTuman = this.value;
+
+        // Filter Mahalla
+        var mahallaSelect = document.getElementById('id_mahalla');
+        var mahallaOptions = mahallaSelect.querySelectorAll('option');
+        mahallaOptions.forEach(function (option) {
+            if (!option.value || !selectedTuman || option.dataset.tuman === selectedTuman) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+                if (option.selected) option.selected = false;
+            }
+        });
+
+        // Filter Inspektor
+        var inspektorSelect = document.getElementById('id_inspektor');
+        var inspektorOptions = inspektorSelect.querySelectorAll('option');
+        inspektorOptions.forEach(function (option) {
+            if (!option.value) return; // Keep "select inspector" option
+            if (!selectedTuman || option.dataset.tuman === selectedTuman) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+                if (option.selected) option.selected = false;
+            }
+        });
+    });
+
+    // Trigger change event on page load to filter options based on selected tuman
+    document.getElementById('id_tuman').dispatchEvent(new Event('change'));
+</script>
+{% endblock %}

@@ -9,11 +9,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from abonents.urls import inspector_patterns
+from abonents.urls import inspector_patterns, custom_admin_patterns
 
 urlpatterns = [
-    # Admin panel
-    path('admin/', admin.site.urls),
+    # Admin panel (Django default) - HIDDEN
+    # path('admin/', admin.site.urls),
+    
+    # Custom Admin Panel
+    path('boshqaruv/', include(custom_admin_patterns)),
     
     # API endpoints
     path('api/', include('abonents.urls')),

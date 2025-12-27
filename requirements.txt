@@ -1,5 +1,23 @@
+# Django
 Django>=4.2
+
+# Django REST Framework
 djangorestframework>=3.14
+
+# Image processing
 Pillow>=10.0
+
+# Admin UI
 django-jazzmin>=2.6
+
+# Filtering
 django-filter>=23.0
+
+# Production server
+gunicorn>=21.0
+
+# Static files serving
+whitenoise>=6.6
+
+# Environment variables (optional)
+python-dotenv>=1.0

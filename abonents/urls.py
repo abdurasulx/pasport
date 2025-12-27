@@ -31,3 +31,35 @@ inspector_patterns = [
     path('abonents/<int:pk>/edit/', views.inspector_abonent_edit, name='inspector-abonent-edit'),
     path('abonents/<int:pk>/delete/', views.inspector_abonent_delete, name='inspector-abonent-delete'),
 ]
+
+# Custom Admin URLs
+custom_admin_patterns = [
+    path('', views.custom_admin_dashboard, name='custom-admin-dashboard'),
+    
+    # Tuman CRUD
+    path('tumanlar/', views.admin_tuman_list, name='admin-tuman-list'),
+    path('tumanlar/add/', views.admin_tuman_add, name='admin-tuman-add'),
+    path('tumanlar/<int:pk>/edit/', views.admin_tuman_edit, name='admin-tuman-edit'),
+    path('tumanlar/<int:pk>/delete/', views.admin_tuman_delete, name='admin-tuman-delete'),
+    
+    # Mahalla CRUD
+    path('mahallalar/', views.admin_mahalla_list, name='admin-mahalla-list'),
+    path('mahallalar/add/', views.admin_mahalla_add, name='admin-mahalla-add'),
+    path('mahallalar/<int:pk>/edit/', views.admin_mahalla_edit, name='admin-mahalla-edit'),
+    path('mahallalar/<int:pk>/delete/', views.admin_mahalla_delete, name='admin-mahalla-delete'),
+    
+    # Inspektor CRUD
+    path('inspektorlar/', views.admin_inspektor_list, name='admin-inspektor-list'),
+    path('inspektorlar/add/', views.admin_inspektor_add, name='admin-inspektor-add'),
+    path('inspektorlar/<int:pk>/edit/', views.admin_inspektor_edit, name='admin-inspektor-edit'),
+    path('inspektorlar/<int:pk>/delete/', views.admin_inspektor_delete, name='admin-inspektor-delete'),
+    
+    # Abonent CRUD
+    path('abonentlar/', views.admin_abonent_list, name='admin-abonent-list'),
+    path('abonentlar/add/', views.admin_abonent_add, name='admin-abonent-add'),
+    path('abonentlar/<int:pk>/edit/', views.admin_abonent_edit, name='admin-abonent-edit'),
+    path('abonentlar/<int:pk>/delete/', views.admin_abonent_delete, name='admin-abonent-delete'),
+    
+    # PINFL Binding
+    path('pinfl-boglash/', views.admin_pinfl_binding, name='admin-pinfl-binding'),
+]

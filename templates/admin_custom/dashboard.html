@@ -1,0 +1,129 @@
+{% extends "admin_custom/base.html" %}
+
+{% block title %}Dashboard - Boshqaruv Paneli{% endblock %}
+{% block header_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #dbeafe; color: #2563eb;">
+            <i class="fas fa-map"></i>
+        </div>
+        <div class="stat-value">{{ tumanlar_soni }}</div>
+        <div class="stat-label">Tumanlar</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #dcfce7; color: #16a34a;">
+            <i class="fas fa-map-marker-alt"></i>
+        </div>
+        <div class="stat-value">{{ mahallalar_soni }}</div>
+        <div class="stat-label">Mahallalar</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fef3c7; color: #d97706;">
+            <i class="fas fa-user-tie"></i>
+        </div>
+        <div class="stat-value">{{ inspektorlar_soni }}</div>
+        <div class="stat-label">Inspektorlar</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #f3e8ff; color: #9333ea;">
+            <i class="fas fa-id-card"></i>
+        </div>
+        <div class="stat-value">{{ abonentlar_soni }}</div>
+        <div class="stat-label">Abonentlar</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-bolt"></i> Tezkor havolalar</h2>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{% url 'admin-tuman-add' %}" class="btn btn-primary" style="justify-content: center;">
+                <i class="fas fa-plus"></i> Yangi tuman
+            </a>
+            <a href="{% url 'admin-mahalla-add' %}" class="btn btn-success" style="justify-content: center;">
+                <i class="fas fa-plus"></i> Yangi mahalla
+            </a>
+            <a href="{% url 'admin-inspektor-add' %}" class="btn btn-secondary"
+                style="justify-content: center; background: #f59e0b; color: white;">
+                <i class="fas fa-plus"></i> Yangi inspektor
+            </a>
+            <a href="{% url 'inspector-abonent-add' %}" class="btn btn-secondary"
+                style="justify-content: center; background: #9333ea; color: white;">
+                <i class="fas fa-plus"></i> Yangi abonent
+            </a>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-map"></i> So'nggi tumanlar</h2>
+            <a href="{% url 'admin-tuman-list' %}" class="btn btn-sm btn-secondary">Barchasi</a>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nomi</th>
+                        <th>Mahallalar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tuman in recent_tumanlar %}
+                    <tr>
+                        <td>{{ tuman.nomi }}</td>
+                        <td>{{ tuman.mahallalar.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="empty-state">Tuman topilmadi</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-user-tie"></i> So'nggi inspektorlar</h2>
+            <a href="{% url 'admin-inspektor-list' %}" class="btn btn-sm btn-secondary">Barchasi</a>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ism</th>
+                        <th>Tuman</th>
+                        <th>Holat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inspektor in recent_inspektorlar %}
+                    <tr>
+                        <td>{{ inspektor.user.get_full_name|default:inspektor.user.username }}</td>
+                        <td>{{ inspektor.tuman.nomi|default:"-" }}</td>
+                        <td>
+                            {% if inspektor.is_active %}
+                            <span class="badge badge-success">Faol</span>
+                            {% else %}
+                            <span class="badge badge-danger">Nofaol</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="empty-state">Inspektor topilmadi</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

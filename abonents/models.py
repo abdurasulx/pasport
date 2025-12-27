@@ -6,18 +6,64 @@ from django.db import models
 from django.core.validators import MinLengthValidator, RegexValidator
 
 
+class Tuman(models.Model):
+    """
+    Tuman (District) modeli - hududiy tashkilot.
+    """
+    nomi = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Tuman nomi"
+    )
+    yaratilgan_vaqt = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Yaratilgan vaqt"
+    )
+    
+    class Meta:
+        verbose_name = "Tuman"
+        verbose_name_plural = "Tumanlar"
+        ordering = ['nomi']
+    
+    def __str__(self):
+        return self.nomi
+
+
+class Mahalla(models.Model):
+    """
+    Mahalla (Neighborhood) modeli - tumanga bog'langan.
+    """
+    nomi = models.CharField(
+        max_length=150,
+        verbose_name="Mahalla nomi"
+    )
+    tuman = models.ForeignKey(
+        Tuman,
+        on_delete=models.CASCADE,
+        related_name='mahallalar',
+        verbose_name="Tuman"
+    )
+    yaratilgan_vaqt = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Yaratilgan vaqt"
+    )
+    
+    class Meta:
+        verbose_name = "Mahalla"
+        verbose_name_plural = "Mahallalar"
+        ordering = ['tuman', 'nomi']
+        unique_together = ['tuman', 'nomi']
+    
+    def __str__(self):
+        return f"{self.nomi} ({self.tuman.nomi})"
+
+
 class Abonent(models.Model):
     """
-    Abonent modeli - pasport ma'lumotlari va shaxsiy identifikatsiya.
+    Abonent modeli - JSHIR va rasm bilan ro'yxatdan o'tkazish.
     """
     
-    # Jins tanlovlari
-    JINS_CHOICES = [
-        ('erkak', 'Erkak'),
-        ('ayol', 'Ayol'),
-    ]
-    
-    # Asosiy identifikatsiya
+    # Abonent kodi (ixtiyoriy)
     abonent_kod = models.CharField(
         max_length=50,
         unique=True,
@@ -27,91 +73,51 @@ class Abonent(models.Model):
         help_text="Telefon raqami yoki shaxsiy kod (ixtiyoriy)"
     )
     
-    # Pasport ma'lumotlari
-    pasport_seriya = models.CharField(
-        max_length=10,
-        verbose_name="Pasport seriyasi",
-        help_text="Masalan: AA, AB, AC"
-    )
-    
-    pasport_raqam = models.CharField(
-        max_length=20,
-        blank=True,
-        default="",
-        verbose_name="Pasport raqami",
-        help_text="7 raqamli pasport raqami (ixtiyoriy)"
-    )
-    
-    # PINFL - Personal Identification Number of Physical Persons (14 raqam) - MAJBURIY
+    # PINFL - MAJBURIY
     pinfl = models.CharField(
         max_length=14,
         unique=True,
-        verbose_name="PINFL (JShShIR)",
-        help_text="14 raqamli shaxsiy identifikatsiya raqami (majburiy)",
+        verbose_name="JSHIR",
+        help_text="14 raqamli shaxsiy identifikatsiya raqami",
         validators=[
             MinLengthValidator(14),
             RegexValidator(
                 regex=r'^\d{14}$',
-                message="PINFL faqat 14 ta raqamdan iborat bo'lishi kerak"
+                message="JSHIR faqat 14 ta raqamdan iborat bo'lishi kerak"
             )
         ]
-    )
-    
-    # Shaxsiy ma'lumotlar
-    ism = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-        verbose_name="Ism"
-    )
-    
-    familiya = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-        verbose_name="Familiya"
-    )
-    
-    otasining_ismi = models.CharField(
-        max_length=100,
-        verbose_name="Otasining ismi",
-        blank=True,
-        default=""
-    )
-    
-    tugilgan_sana = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name="Tug'ilgan sana"
-    )
-    
-    jins = models.CharField(
-        max_length=10,
-        choices=JINS_CHOICES,
-        blank=True,
-        default="",
-        verbose_name="Jinsi"
     )
     
     # Rasm - MAJBURIY
     rasm = models.ImageField(
         upload_to='abonent_rasmlar/',
         verbose_name="Rasm",
-        help_text="Abonentning rasmi (majburiy)"
+        help_text="Abonentning rasmi"
     )
     
-    # Qo'shimcha ma'lumotlar
-    manzil = models.TextField(
-        verbose_name="Manzil",
-        blank=True,
-        default=""
+    # Hudud ma'lumotlari - MAJBURIY
+    tuman = models.ForeignKey(
+        Tuman,
+        on_delete=models.PROTECT,
+        related_name='abonentlar',
+        verbose_name="Tuman"
     )
     
-    telefon = models.CharField(
-        max_length=20,
-        verbose_name="Telefon raqami",
+    mahalla = models.ForeignKey(
+        Mahalla,
+        on_delete=models.PROTECT,
+        related_name='abonentlar',
+        verbose_name="Mahalla"
+    )
+    
+    # Kim kiritgani - Yangi qo'shilgan
+    inspektor = models.ForeignKey(
+        'Inspektor',
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        default=""
+        related_name='added_abonents',
+        verbose_name="Kiritgan inspektor"
     )
     
     # Timestamp fieldlar
@@ -131,20 +137,7 @@ class Abonent(models.Model):
         ordering = ['-id']
     
     def __str__(self):
-        return f"{self.familiya} {self.ism} ({self.abonent_kod})"
-    
-    @property
-    def toliq_ism(self):
-        """To'liq FIO qaytaradi."""
-        parts = [self.familiya, self.ism]
-        if self.otasining_ismi:
-            parts.append(self.otasining_ismi)
-        return " ".join(parts)
-    
-    @property
-    def pasport(self):
-        """Pasport seriya va raqamini birlashtiradi."""
-        return f"{self.pasport_seriya} {self.pasport_raqam}"
+        return f"{self.pinfl} ({self.mahalla.nomi})"
 
 
 class Inspektor(models.Model):
@@ -167,12 +160,21 @@ class Inspektor(models.Model):
         default=""
     )
     
-    hudud = models.CharField(
-        max_length=100,
-        verbose_name="Hudud",
-        help_text="Inspektor ishlaydigan hudud",
+    # Hudud ma'lumotlari
+    tuman = models.ForeignKey(
+        Tuman,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        default=""
+        related_name='inspektorlar',
+        verbose_name="Tuman"
+    )
+    
+    mahallalar = models.ManyToManyField(
+        Mahalla,
+        blank=True,
+        related_name='inspektorlar',
+        verbose_name="Mahallalar"
     )
     
     lavozim = models.CharField(
@@ -198,4 +200,5 @@ class Inspektor(models.Model):
         ordering = ['-id']
     
     def __str__(self):
-        return f"{self.user.get_full_name() or self.user.username} - {self.hudud}"
+        tuman_nomi = self.tuman.nomi if self.tuman else "Tuman yo'q"
+        return f"{self.user.get_full_name() or self.user.username} - {tuman_nomi}"

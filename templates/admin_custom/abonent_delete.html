@@ -1,0 +1,35 @@
+{% extends "admin_custom/base.html" %}
+
+{% block title %}Abonentni o'chirish - Boshqaruv{% endblock %}
+{% block header_title %}Abonentni o'chirish{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Abonentni o'chirish</h1>
+</div>
+
+<div class="card">
+    <div class="card-body" style="text-align: center; padding: 3rem;">
+        <div
+            style="width: 80px; height: 80px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+            <i class="fas fa-trash" style="font-size: 2rem; color: #ef4444;"></i>
+        </div>
+
+        <h2 style="margin-bottom: 0.5rem;">Ishonchingiz komilmi?</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+            Siz <strong>{{ abonent.pinfl }}</strong> ({{ abonent.mahalla.nomi }}) abonentini o'chirmoqchisiz.
+            <br>Bu amalni ortga qaytarib bo'lmaydi.
+        </p>
+
+        <form method="post" style="display: flex; justify-content: center; gap: 1rem;">
+            {% csrf_token %}
+            <a href="{% url 'admin-abonent-list' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Bekor qilish
+            </a>
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Ha, o'chirish
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

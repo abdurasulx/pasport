@@ -6,46 +6,32 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
-from .models import Abonent, Inspektor
+from .models import Abonent, Inspektor, Tuman, Mahalla
 
 
 @admin.register(Abonent)
 class AbonentAdmin(admin.ModelAdmin):
     """
-    Abonent admin configuration with thumbnail preview and custom styling.
+    Abonent admin configuration - simplified.
     """
     
-    # List display
     list_display = [
         'id',
         'rasm_thumbnail',
-        'abonent_kod',
-        'toliq_ism_display',
         'pinfl',
-        'jins',
-        'telefon',
+        'tuman',
+        'mahalla',
+        'inspektor',
         'yaratilgan_vaqt',
     ]
     
-    # List display links
-    list_display_links = ['id', 'abonent_kod']
-    
-    # Search fields - abonent_kod, pinfl (JShShIR), ism, familiya
-    search_fields = ['abonent_kod', 'pinfl', 'ism', 'familiya', 'telefon']
-    
-    # Filters
-    list_filter = ['jins', 'yaratilgan_vaqt']
-    
-    # Ordering
+    list_display_links = ['id', 'pinfl']
+    search_fields = ['pinfl', 'abonent_kod']
+    list_filter = ['tuman', 'mahalla', 'inspektor', 'yaratilgan_vaqt']
     ordering = ['-id']
-    
-    # Pagination
     list_per_page = 20
-    
-    # Readonly fields for detail view - rasm preview
     readonly_fields = ['rasm_preview', 'yaratilgan_vaqt', 'yangilangan_vaqt']
     
-    # Fieldsets for change form
     fieldsets = (
         ('Rasm', {
             'fields': ('rasm_preview', 'rasm'),
@@ -53,23 +39,15 @@ class AbonentAdmin(admin.ModelAdmin):
         ('Identifikatsiya', {
             'fields': ('abonent_kod', 'pinfl'),
         }),
-        ('Pasport ma\'lumotlari', {
-            'fields': ('pasport_seriya', 'pasport_raqam'),
+        ('Hudud', {
+            'fields': ('tuman', 'mahalla'),
         }),
-        ('Shaxsiy ma\'lumotlar', {
-            'fields': ('familiya', 'ism', 'otasining_ismi', 'tugilgan_sana', 'jins'),
-        }),
-        ('Aloqa ma\'lumotlari', {
-            'fields': ('telefon', 'manzil'),
-            'classes': ('collapse',),
-        }),
-        ('Tizim ma\'lumotlari', {
+        ('Tizim', {
             'fields': ('yaratilgan_vaqt', 'yangilangan_vaqt'),
             'classes': ('collapse',),
         }),
     )
     
-    # Add form fieldsets (without readonly fields)
     add_fieldsets = (
         ('Rasm', {
             'fields': ('rasm',),
@@ -77,53 +55,64 @@ class AbonentAdmin(admin.ModelAdmin):
         ('Identifikatsiya', {
             'fields': ('abonent_kod', 'pinfl'),
         }),
-        ('Pasport ma\'lumotlari', {
-            'fields': ('pasport_seriya', 'pasport_raqam'),
-        }),
-        ('Shaxsiy ma\'lumotlar', {
-            'fields': ('familiya', 'ism', 'otasining_ismi', 'tugilgan_sana', 'jins'),
-        }),
-        ('Aloqa ma\'lumotlari', {
-            'fields': ('telefon', 'manzil'),
+        ('Hudud', {
+            'fields': ('tuman', 'mahalla'),
         }),
     )
     
     def get_fieldsets(self, request, obj=None):
-        """Add form uchun alohida fieldset."""
         if not obj:
             return self.add_fieldsets
         return super().get_fieldsets(request, obj)
     
     @admin.display(description='Rasm')
     def rasm_thumbnail(self, obj):
-        """List display uchun thumbnail."""
         if obj.rasm:
             return format_html(
                 '<img src="{}" width="50" height="50" '
                 'style="object-fit: cover; border-radius: 5px; border: 1px solid #ddd;" />',
                 obj.rasm.url
             )
-        return format_html(
-            '<span style="color: #999; font-style: italic;">Rasm yo\'q</span>'
-        )
+        return format_html('<span style="color: #999;">-</span>')
     
-    @admin.display(description='Rasm ko\'rinishi')
+    @admin.display(description='Rasm')
     def rasm_preview(self, obj):
-        """Change form uchun katta rasm preview."""
         if obj.rasm:
             return format_html(
                 '<img src="{}" width="200" height="200" '
-                'style="object-fit: cover; border-radius: 10px; border: 2px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" />',
+                'style="object-fit: cover; border-radius: 10px;" />',
                 obj.rasm.url
             )
-        return format_html(
-            '<span style="color: #999; font-style: italic; font-size: 14px;">Rasm yuklanmagan</span>'
-        )
+        return format_html('<span style="color: #999;">Rasm yuklanmagan</span>')
+
+
+@admin.register(Tuman)
+class TumanAdmin(admin.ModelAdmin):
+    """
+    Tuman (District) admin configuration.
+    """
+    list_display = ['id', 'nomi', 'mahallalar_soni', 'yaratilgan_vaqt']
+    list_display_links = ['id', 'nomi']
+    search_fields = ['nomi']
+    ordering = ['nomi']
+    list_per_page = 20
     
-    @admin.display(description='F.I.O')
-    def toliq_ism_display(self, obj):
-        """To'liq ismni ko'rsatish."""
-        return obj.toliq_ism
+    @admin.display(description='Mahallalar soni')
+    def mahallalar_soni(self, obj):
+        return obj.mahallalar.count()
+
+
+@admin.register(Mahalla)
+class MahallaAdmin(admin.ModelAdmin):
+    """
+    Mahalla (Neighborhood) admin configuration.
+    """
+    list_display = ['id', 'nomi', 'tuman', 'yaratilgan_vaqt']
+    list_display_links = ['id', 'nomi']
+    list_filter = ['tuman']
+    search_fields = ['nomi', 'tuman__nomi']
+    ordering = ['tuman', 'nomi']
+    list_per_page = 20
 
 
 @admin.register(Inspektor)
@@ -131,19 +120,23 @@ class InspektorAdmin(admin.ModelAdmin):
     """
     Inspektor admin configuration.
     """
-    list_display = ['id', 'user', 'get_full_name', 'hudud', 'telefon', 'is_active', 'yaratilgan_vaqt']
+    list_display = ['id', 'user', 'get_full_name', 'tuman', 'get_mahallalar', 'telefon', 'is_active', 'yaratilgan_vaqt']
     list_display_links = ['id', 'user']
-    list_filter = ['is_active', 'hudud', 'yaratilgan_vaqt']
-    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'hudud', 'telefon']
+    list_filter = ['is_active', 'tuman', 'yaratilgan_vaqt']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'tuman__nomi', 'telefon']
     ordering = ['-id']
     list_per_page = 20
+    filter_horizontal = ['mahallalar']
     
     fieldsets = (
         ('Foydalanuvchi', {
             'fields': ('user',),
         }),
-        ('Inspektor ma\'lumotlari', {
-            'fields': ('hudud', 'lavozim', 'telefon'),
+        ('Hudud', {
+            'fields': ('tuman', 'mahallalar'),
+        }),
+        ('Inspektor', {
+            'fields': ('lavozim', 'telefon'),
         }),
         ('Holat', {
             'fields': ('is_active',),
@@ -153,4 +146,11 @@ class InspektorAdmin(admin.ModelAdmin):
     @admin.display(description='F.I.O')
     def get_full_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
-
+    
+    @admin.display(description='Mahallalar')
+    def get_mahallalar(self, obj):
+        mahallalar = obj.mahallalar.all()[:3]
+        names = [m.nomi for m in mahallalar]
+        if obj.mahallalar.count() > 3:
+            names.append(f"...+{obj.mahallalar.count() - 3}")
+        return ", ".join(names) if names else "-"

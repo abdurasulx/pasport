@@ -1,90 +1,52 @@
 {% extends "inspector/base.html" %}
 
-{% block title %}{% if form.instance.pk %}Tahrirlash{% else %}Yangi abonent{% endif %}{% endblock %}
+{% block title %}{% if form.instance.pk %}Abonentni tahrirlash{% else %}Yangi abonent{% endif %}{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h2>
-            <i class="fas fa-{% if form.instance.pk %}edit{% else %}user-plus{% endif %}"></i>
+<div style="max-width: 600px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
             {% if form.instance.pk %}Abonentni tahrirlash{% else %}Yangi abonent qo'shish{% endif %}
-        </h2>
+        </h1>
+        <a href="{% url 'inspector-abonent-list' %}"
+            style="color: var(--gray-500); text-decoration: none; font-size: 0.875rem;">
+            <i class="fas fa-arrow-left"></i> Orqaga
+        </a>
     </div>
-    <div class="card-body">
+
+    <div class="card" style="border-radius: 16px; padding: 2rem;">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
             {% if form.errors %}
-            <div class="alert alert-danger">
+            <div
+                style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
                 <i class="fas fa-exclamation-circle"></i>
-                <div>
-                    <strong>Xatoliklar mavjud:</strong>
-                    <ul style="margin: 0.5rem 0 0 1rem; padding: 0;">
-                        {% for field in form %}
-                        {% for error in field.errors %}
-                        <li>{{ field.label }}: {{ error }}</li>
-                        {% endfor %}
-                        {% endfor %}
-                        {% for error in form.non_field_errors %}
-                        <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                <strong>Xatoliklar mavjud:</strong>
+                <ul style="margin: 0.5rem 0 0 1rem; padding: 0;">
+                    {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
             </div>
             {% endif %}
 
-            <!-- Rasm section -->
-            <div class="form-group">
-                <label class="form-label">
-                    <i class="fas fa-camera" style="margin-right: 0.5rem;"></i>Rasm *
-                </label>
-
-                {% if form.instance.pk and form.instance.rasm %}
-                <div style="margin-bottom: 1rem;">
-                    <img src="{{ form.instance.rasm.url }}" class="image-preview active" alt="Joriy rasm">
-                </div>
-                {% endif %}
-
-                <div class="file-input-wrapper">
-                    <div class="file-input-btn">
-                        <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem;"></i>
-                        <div>
-                            <strong>{% if form.instance.pk %}Yangi rasm yuklash {% else %} Rasm yuklash {% endif %}
-                            </strong>
-                            <p style="font-size: 0.75rem; margin-top: 0.25rem;">Bosing yoki kameradan oling</p>
-                        </div>
-                    </div>
-                    <input type="file" name="rasm" accept="image/*" capture="environment" {% if not form.instance.pk %}
-                        required {% endif %}>
-                </div>
-                <img class="image-preview" alt="Ko'rib chiqish">
-                {% if form.rasm.errors %}
-                <div class="form-error">{{ form.rasm.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 1.5rem 0;">
-
-            <!-- Identifikatsiya -->
+            <!-- JSHIR -->
             <h3
                 style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
                 <i class="fas fa-fingerprint"></i> Identifikatsiya
             </h3>
 
             <div class="form-group">
-                <label class="form-label" for="id_abonent_kod">Abonent kodi</label>
-                <input type="text" name="abonent_kod" id="id_abonent_kod" class="form-control"
-                    value="{{ form.abonent_kod.value|default:'' }}" placeholder="Telefon raqami yoki kod (ixtiyoriy)">
-                {% if form.abonent_kod.errors %}
-                <div class="form-error">{{ form.abonent_kod.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="id_pinfl">PINFL (JShShIR) *</label>
+                <label class="form-label" for="id_pinfl">JSHIR (14 raqam) *</label>
                 <input type="text" name="pinfl" id="id_pinfl" class="form-control"
-                    value="{{ form.pinfl.value|default:'' }}" placeholder="14 raqamli shaxsiy raqam" pattern="\d{14}"
-                    maxlength="14" inputmode="numeric" required>
+                    value="{{ form.pinfl.value|default:'' }}" placeholder="12345678901234" maxlength="14"
+                    pattern="\d{14}" required>
                 {% if form.pinfl.errors %}
                 <div class="form-error">{{ form.pinfl.errors.0 }}</div>
                 {% endif %}
@@ -92,107 +54,69 @@
 
             <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 1.5rem 0;">
 
-            <!-- Pasport -->
+            <!-- Hudud -->
             <h3
                 style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                <i class="fas fa-id-card"></i> Pasport ma'lumotlari
+                <i class="fas fa-map-marker-alt"></i> Hudud ma'lumotlari
             </h3>
 
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" for="id_pasport_seriya">Seriya *</label>
-                    <input type="text" name="pasport_seriya" id="id_pasport_seriya" class="form-control"
-                        value="{{ form.pasport_seriya.value|default:'' }}" placeholder="AA" maxlength="2"
-                        style="text-transform: uppercase;" required>
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" for="id_pasport_raqam">Raqam</label>
-                    <input type="text" name="pasport_raqam" id="id_pasport_raqam" class="form-control"
-                        value="{{ form.pasport_raqam.value|default:'' }}" placeholder="1234567 (ixtiyoriy)"
-                        maxlength="7" inputmode="numeric">
-                </div>
+            {% if inspektor and inspektor.tuman %}
+            <div class="form-group">
+                <label class="form-label">Tuman</label>
+                <input type="text" class="form-control" value="{{ inspektor.tuman.nomi }}" readonly
+                    style="background-color: var(--gray-100); cursor: not-allowed;">
+                <small style="color: var(--gray-500); font-size: 0.75rem;">Tuman avtomatik belgilanadi</small>
             </div>
-            {% if form.pasport_seriya.errors or form.pasport_raqam.errors %}
-            <div class="form-error">{{ form.pasport_seriya.errors.0 }}{{ form.pasport_raqam.errors.0 }}</div>
             {% endif %}
 
-            <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 1.5rem 0;">
-
-            <!-- Shaxsiy ma'lumotlar -->
-            <h3
-                style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                <i class="fas fa-user"></i> Shaxsiy ma'lumotlar
-            </h3>
-
             <div class="form-group">
-                <label class="form-label" for="id_familiya">Familiya</label>
-                <input type="text" name="familiya" id="id_familiya" class="form-control"
-                    value="{{ form.familiya.value|default:'' }}" placeholder="Familiya (ixtiyoriy)">
-                {% if form.familiya.errors %}
-                <div class="form-error">{{ form.familiya.errors.0 }}</div>
+                <label class="form-label" for="id_mahalla">Mahalla *</label>
+                <select name="mahalla" id="id_mahalla" class="form-control" required>
+                    <option value="">Mahallani tanlang</option>
+                    {% for mahalla in form.mahalla.field.queryset %}
+                    <option value="{{ mahalla.pk }}" {% if form.mahalla.value == mahalla.pk or form.mahalla.value|stringformat:"s" == mahalla.pk|stringformat:"s" %} selected{% endif %}>
+                        {{ mahalla.nomi }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if form.mahalla.errors %}
+                <div class="form-error">{{ form.mahalla.errors.0 }}</div>
                 {% endif %}
             </div>
 
+            <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 1.5rem 0;">
+
+            <!-- Rasm -->
+            <h3
+                style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                <i class="fas fa-camera"></i> Rasm
+            </h3>
+
+            {% if form.instance.pk and form.instance.rasm %}
+            <div style="margin-bottom: 1rem; text-align: center;">
+                <img src="{{ form.instance.rasm.url }}"
+                    style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 12px; border: 2px solid var(--gray-200);">
+                <p style="color: var(--gray-500); font-size: 0.75rem; margin-top: 0.5rem;">Joriy rasm</p>
+            </div>
+            {% endif %}
+
             <div class="form-group">
-                <label class="form-label" for="id_ism">Ism</label>
-                <input type="text" name="ism" id="id_ism" class="form-control" value="{{ form.ism.value|default:'' }}"
-                    placeholder="Ism (ixtiyoriy)">
-                {% if form.ism.errors %}
-                <div class="form-error">{{ form.ism.errors.0 }}</div>
+                <label class="form-label" for="id_rasm">
+                    {% if form.instance.pk %}Yangi rasm (o'zgartirish uchun){% else %}Rasm *{% endif %}
+                </label>
+                <input type="file" name="rasm" id="id_rasm" class="form-control" accept="image/*" {% if not form.instance.pk %}required{% endif %}>
+                {% if form.rasm.errors %}
+                <div class="form-error">{{ form.rasm.errors.0 }}</div>
                 {% endif %}
             </div>
 
-            <div class="form-group">
-                <label class="form-label" for="id_otasining_ismi">Otasining ismi</label>
-                <input type="text" name="otasining_ismi" id="id_otasining_ismi" class="form-control"
-                    value="{{ form.otasining_ismi.value|default:'' }}" placeholder="Otasining ismi">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" for="id_tugilgan_sana">Tug'ilgan sana</label>
-                    <input type="date" name="tugilgan_sana" id="id_tugilgan_sana" class="form-control"
-                        value="{{ form.tugilgan_sana.value|default:'' }}">
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" for="id_jins">Jinsi</label>
-                    <select name="jins" id="id_jins" class="form-control">
-                        <option value="">Tanlang (ixtiyoriy)</option>
-                        <option value="erkak" {% if form.jins.value == "erkak" %}selected{% endif %}>Erkak</option>
-                        <option value="ayol" {% if form.jins.value == "ayol" %}selected{% endif %}>Ayol</option>
-                    </select>
-                </div>
-            </div>
-            {% if form.tugilgan_sana.errors %}
-            <div class="form-error">{{ form.tugilgan_sana.errors.0 }}</div>
-            {% endif %}
-
-            <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 1.5rem 0;">
-
-            <!-- Aloqa -->
-            <h3
-                style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                <i class="fas fa-phone"></i> Aloqa ma'lumotlari
-            </h3>
-
-            <div class="form-group">
-                <label class="form-label" for="id_telefon">Telefon raqami</label>
-                <input type="tel" name="telefon" id="id_telefon" class="form-control"
-                    value="{{ form.telefon.value|default:'' }}" placeholder="+998 90 123 45 67" inputmode="tel">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="id_manzil">Manzil</label>
-                <textarea name="manzil" id="id_manzil" class="form-control"
-                    placeholder="To'liq manzil">{{ form.manzil.value|default:'' }}</textarea>
-            </div>
-
-            <!-- Submit buttons -->
-            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-                <a href="{% url 'inspector-abonent-list' %}" class="btn btn-secondary" style="flex: 1;">
+            <!-- Buttons -->
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <a href="{% url 'inspector-abonent-list' %}" class="btn btn-secondary"
+                    style="flex: 1; justify-content: center;">
                     <i class="fas fa-times"></i> Bekor qilish
                 </a>
-                <button type="submit" class="btn btn-success" style="flex: 2;">
+                <button type="submit" class="btn btn-primary" style="flex: 2; justify-content: center;">
                     <i class="fas fa-save"></i>
                     {% if form.instance.pk %}Saqlash{% else %}Qo'shish{% endif %}
                 </button>
@@ -200,23 +124,4 @@
         </form>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Auto uppercase pasport seriya
-    document.getElementById('id_pasport_seriya').addEventListener('input', function () {
-        this.value = this.value.toUpperCase();
-    });
-
-    // PINFL numeric only
-    document.getElementById('id_pinfl').addEventListener('input', function () {
-        this.value = this.value.replace(/\D/g, '').slice(0, 14);
-    });
-
-    // Pasport raqam numeric only
-    document.getElementById('id_pasport_raqam').addEventListener('input', function () {
-        this.value = this.value.replace(/\D/g, '').slice(0, 7);
-    });
-</script>
 {% endblock %}
