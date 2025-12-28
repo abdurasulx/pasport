@@ -21,7 +21,7 @@
             <select name="tuman" class="form-control" style="width: 200px;" onchange="this.form.submit()">
                 <option value="">Barcha tumanlar</option>
                 {% for tuman in tumanlar %}
-                <option value="{{ tuman.id }}" {% if selected_tuman|stringformat:"s" == tuman.id|stringformat:"s" %}selected{% endif %}>
+                <option value="{{ tuman.id }}" {% if selected_tuman==tuman.id %}selected{% endif %}>
                     {{ tuman.nomi }}
                 </option>
                 {% endfor %}
@@ -30,7 +30,7 @@
             <select name="mahalla" class="form-control" style="width: 200px;">
                 <option value="">Barcha mahallalar</option>
                 {% for mahalla in mahallalar %}
-                <option value="{{ mahalla.id }}" {% if selected_mahalla|stringformat:"s" == mahalla.id|stringformat:"s" %}selected{% endif %}>
+                <option value="{{ mahalla.id }}" {% if selected_mahalla==mahalla.id %}selected{% endif %}>
                     {{ mahalla.nomi }}
                 </option>
                 {% endfor %}
@@ -39,7 +39,7 @@
             <select name="inspektor" class="form-control" style="width: 200px;">
                 <option value="">Barcha inspektorlar</option>
                 {% for insp in inspektorlar %}
-                <option value="{{ insp.id }}" {% if selected_inspektor|stringformat:"s"  == insp.id|stringformat:"s" %}selected{% endif %}>
+                <option value="{{ insp.id }}" {% if selected_inspektor==insp.id %}selected{% endif %}>
                     {{ insp.user.get_full_name|default:insp.user.username }}
                 </option>
                 {% endfor %}
@@ -73,7 +73,7 @@
                 <td>
                     {% if abonent.rasm %}
                     <img src="{{ abonent.rasm.url }}"
-                        style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px;">
+                        style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px;" alt="Abonent rasmi">
                     {% else %}
                     <span style="color: var(--text-muted);">-</span>
                     {% endif %}
@@ -89,12 +89,13 @@
                 </td>
                 <td>{{ abonent.tuman.nomi }}</td>
                 <td>{{ abonent.mahalla.nomi }}</td>
-                <td>{{ abonent.yaratilgan_vaqt|date:"d.m.Y" }}</td>
+                <td>{{ abonent.yaratilgan_vaqt|date:"d.m.Y H:i" }}</td>
                 <td>
                     <div class="actions">
-                        <a href="{% url 'admin-abonent-edit' abonent.pk %}" class="btn btn-sm btn-secondary"><i
-                                class="fas fa-edit"></i></a>
-                        <a href="{% url 'admin-abonent-delete' abonent.pk %}" class="btn btn-sm btn-danger"><i
+                        <a href="{% url 'admin-abonent-edit' abonent.pk %}" class="btn btn-sm btn-secondary"
+                            title="Tahrirlash"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'admin-abonent-delete' abonent.pk %}" class="btn btn-sm btn-danger"
+                            onclick="return confirm('Rostdan ham o\'chirmoqchimisiz?')" title="O'chirish"><i
                                 class="fas fa-trash"></i></a>
                     </div>
                 </td>
@@ -110,7 +111,8 @@
         <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_tuman %}tuman={{ selected_tuman }}&{% endif %}{% if selected_mahalla %}mahalla={{ selected_mahalla }}&{% endif %}{% if selected_inspektor %}inspektor={{ selected_inspektor }}&{% endif %}page={{ page_obj.previous_page_number }}"
             class="btn btn-sm btn-secondary"><i class="fas fa-chevron-left"></i></a>
         {% endif %}
-        <span style="padding: 0.375rem 0.75rem;">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        <span style="padding: 0.375rem 0.75rem;">Sahifa {{ page_obj.number }} / {{ page_obj.paginator.num_pages
+            }}</span>
         {% if page_obj.has_next %}
         <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_tuman %}tuman={{ selected_tuman }}&{% endif %}{% if selected_mahalla %}mahalla={{ selected_mahalla }}&{% endif %}{% if selected_inspektor %}inspektor={{ selected_inspektor }}&{% endif %}page={{ page_obj.next_page_number }}"
             class="btn btn-sm btn-secondary"><i class="fas fa-chevron-right"></i></a>
