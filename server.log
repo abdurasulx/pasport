@@ -1,0 +1,73 @@
+Watching for file changes with StatReloader
+/home/banda/Desktop/pasport/abonents/models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+December 29, 2025 - 14:44:21
+Django version 5.2.9, using settings 'AbonentDataset.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+/home/banda/Desktop/pasport/abonents/models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+December 29, 2025 - 14:45:12
+Django version 5.2.9, using settings 'AbonentDataset.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+[29/Dec/2025 14:46:13] "GET /login/ HTTP/1.1" 302 0
+[29/Dec/2025 14:46:13] "GET /boshqaruv/ HTTP/1.1" 200 17271
+[29/Dec/2025 14:46:21] "GET /boshqaruv/abonentlar/ HTTP/1.1" 200 22511
+[29/Dec/2025 14:46:21] "GET /media/abonent_rasmlar/test.jpg HTTP/1.1" 304 0
+[29/Dec/2025 14:46:29] "GET /boshqaruv/abonentlar/10/edit/ HTTP/1.1" 200 20002
+[29/Dec/2025 14:46:35] "POST /boshqaruv/abonentlar/10/edit/ HTTP/1.1" 302 0
+[29/Dec/2025 14:46:35] "GET /boshqaruv/abonentlar/ HTTP/1.1" 200 22802
+[29/Dec/2025 14:46:44] "GET /boshqaruv/abonentlar/9/edit/ HTTP/1.1" 200 20000
+[29/Dec/2025 14:47:04] "POST /boshqaruv/abonentlar/9/edit/ HTTP/1.1" 302 0
+[29/Dec/2025 14:47:04] "GET /boshqaruv/abonentlar/ HTTP/1.1" 200 22802
+/home/banda/Desktop/pasport/abonents/models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+December 29, 2025 - 14:45:32
+Django version 5.2.9, using settings 'AbonentDataset.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+/home/banda/Desktop/pasport/abonents/models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+December 29, 2025 - 14:48:04
+Django version 5.2.9, using settings 'AbonentDataset.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+/home/banda/Desktop/pasport/abonents/apps.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+December 29, 2025 - 14:51:42
+Django version 5.2.9, using settings 'AbonentDataset.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+[29/Dec/2025 14:58:27] "GET /boshqaruv/abonentlar/ HTTP/1.1" 200 22511
+[29/Dec/2025 14:58:27] "GET /media/abonent_rasmlar/test.jpg HTTP/1.1" 304 0
