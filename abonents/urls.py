@@ -62,4 +62,7 @@ custom_admin_patterns = [
     
     # PINFL Binding
     path('pinfl-boglash/', views.admin_pinfl_binding, name='admin-pinfl-binding'),
+    
+    # Image fixing
+    path('rasmlarni-tuzatish/', views.admin_fix_images, name='admin-fix-images'),
 ]

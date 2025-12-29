@@ -6,6 +6,7 @@ djangorestframework>=3.14
 
 # Image processing
 Pillow>=10.0
+opencv-python>=4.7
 
 # Admin UI
 django-jazzmin>=2.6

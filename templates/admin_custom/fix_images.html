@@ -1,0 +1,196 @@
+{% extends "admin_custom/base.html" %}
+
+{% block title %}Katta Hajmlik Rasmlarni Moslash - Boshqaruv Paneli{% endblock %}
+{% block header_title %}Rasmlarni Moslash{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card" style="border-radius: 16px; padding: 2rem;">
+        <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem;">
+            <i class="fas fa-compress" style="color: #f59e0b;"></i>
+            Katta Hajmlik Rasmlarni Moslash
+        </h1>
+
+        <p style="color: var(--gray-600); margin-bottom: 2rem;">
+            Bu vosita 520KB dan katta rasmlarni avtomatik ravishda siqadi:
+        </p>
+
+        <ul style="color: var(--gray-700); margin-bottom: 2rem; line-height: 1.8;">
+            <li><strong>Kompresiya:</strong> 520KB dan katta rasmlarni siqadi</li>
+            <li><strong>Original format saqlanadi:</strong> Rasmlarning aylanishi va nisbati o'zgarmaydi</li>
+            <li><strong>Hisobot:</strong> Qancha joy tejalganligi haqida batafsil ma'lumot beradi</li>
+        </ul>
+
+        <div
+            style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 12px; padding: 1rem; margin-bottom: 2rem;">
+            <p style="margin: 0; color: #92400e;">
+                <i class="fas fa-info-circle"></i>
+                <strong>Diqqat:</strong> Bu jarayon bir oz vaqt olishi mumkin. Jarayon davomida sahifani yopmang.
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+            <button type="button" id="fix-images-btn" class="btn btn-warning"
+                style="flex: 2; background: #f59e0b; border-color: #f59e0b; justify-content: center;">
+                <i class="fas fa-compress"></i> Rasmlarni Siqishni Boshlash
+            </button>
+            <a href="{% url 'admin-abonent-list' %}" class="btn btn-secondary"
+                style="flex: 1; justify-content: center;">
+                <i class="fas fa-arrow-left"></i> Orqaga
+            </a>
+        </div>
+
+        <!-- Progress area -->
+        <div id="progress-area" style="display: none; margin-top: 2rem;">
+            <div style="background: #f3f4f6; border-radius: 12px; padding: 1.5rem;">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div class="spinner"
+                        style="width: 24px; height: 24px; border: 3px solid #e5e7eb; border-top-color: #f59e0b; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.75rem;">
+                    </div>
+                    <span style="color: var(--gray-700); font-weight: 600;">Rasmlar ishlanmoqda...</span>
+                </div>
+                <p style="color: var(--gray-600); margin: 0; font-size: 0.875rem;">Iltimos kuting, bu bir necha daqiqa
+                    olishi mumkin.</p>
+            </div>
+        </div>
+
+        <!-- Results area -->
+        <div id="results-area" style="display: none; margin-top: 2rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--gray-900);">
+                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                Natijalar
+            </h3>
+            <div id="results-content"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<script>
+    document.getElementById('fix-images-btn').addEventListener('click', function () {
+        const btn = this;
+        const progressArea = document.getElementById('progress-area');
+        const resultsArea = document.getElementById('results-area');
+
+        // Disable button
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ishlanmoqda...';
+
+        // Show progress
+        progressArea.style.display = 'block';
+        resultsArea.style.display = 'none';
+
+        // Make AJAX request
+        fetch('{% url "admin-fix-images" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Hide progress
+                progressArea.style.display = 'none';
+
+                // Show results
+                resultsArea.style.display = 'block';
+
+                let html = '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">';
+
+                // Summary cards
+                html += `
+            <div style="background: #dbeafe; border-radius: 12px; padding: 1rem;">
+                <div style="color: #1e40af; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Jami rasmlar</div>
+                <div style="color: #1e3a8a; font-size: 1.875rem; font-weight: 700;">${data.total}</div>
+            </div>
+            <div style="background: #d1fae5; border-radius: 12px; padding: 1rem;">
+                <div style="color: #065f46; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Ishlab chiqildi</div>
+                <div style="color: #064e3b; font-size: 1.875rem; font-weight: 700;">${data.processed}</div>
+            </div>
+            <div style="background: #fef3c7; border-radius: 12px; padding: 1rem;">
+                <div style="color: #92400e; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Kompresslandi</div>
+                <div style="color: #78350f; font-size: 1.875rem; font-weight: 700;">${data.compressed}</div>
+            </div>
+            <div style="background: #fee2e2; border-radius: 12px; padding: 1rem;">
+                <div style="color: #991b1b; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Xatoliklar</div>
+                <div style="color: #7f1d1d; font-size: 1.875rem; font-weight: 700;">${data.errors || 0}</div>
+            </div>
+        `;
+                html += '</div>';
+
+                // Errors
+                if (data.errors > 0) {
+                    html += `
+                <div style="background: #fee2e2; border: 1px solid #fecaca; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
+                    <p style="margin: 0; color: #991b1b;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Xatoliklar:</strong> ${data.errors} ta rasm ishlanmadi
+                    </p>
+                </div>
+            `;
+                }
+
+                // Details
+                if (data.details && data.details.length > 0) {
+                    html += '<h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--gray-900);">Batafsil ma\'lumot:</h4>';
+                    html += '<div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">';
+                    html += '<table style="width: 100%; font-size: 0.875rem;">';
+                    html += '<thead style="background: var(--gray-100); position: sticky; top: 0;"><tr><th style="padding: 0.75rem; text-align: left;">JSHIR</th><th style="padding: 0.75rem; text-align: left;">Eski hajm</th><th style="padding: 0.75rem; text-align: left;">Yangi hajm</th><th style="padding: 0.75rem; text-align: left;">Tejaldi</th></tr></thead>';
+                    html += '<tbody>';
+
+                    data.details.forEach(detail => {
+                        if (detail.error) {
+                            html += `<tr style="background: #fee2e2;"><td colspan="4" style="padding: 0.75rem; color: #991b1b;">${detail.pinfl}: ${detail.error}</td></tr>`;
+                        } else {
+                            html += `
+                        <tr style="border-bottom: 1px solid var(--gray-200);">
+                            <td style="padding: 0.75rem;">${detail.pinfl}</td>
+                            <td style="padding: 0.75rem;">${detail.original_size}</td>
+                            <td style="padding: 0.75rem;">${detail.new_size}</td>
+                            <td style="padding: 0.75rem;">
+                                <span style="background: #d1fae5; color: #065f46; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">${detail.saved}</span>
+                            </td>
+                        </tr>
+                    `;
+                        }
+                    });
+
+                    html += '</tbody></table></div>';
+                }
+
+                document.getElementById('results-content').innerHTML = html;
+
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-compress"></i> Rasmlarni Siqishni Boshlash';
+            })
+            .catch(error => {
+                progressArea.style.display = 'none';
+                resultsArea.style.display = 'block';
+                document.getElementById('results-content').innerHTML = `
+            <div style="background: #fee2e2; border: 1px solid #fecaca; border-radius: 12px; padding: 1rem;">
+                <p style="margin: 0; color: #991b1b;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Xatolik:</strong> ${error.message}
+                </p>
+            </div>
+        `;
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-compress"></i> Rasmlarni Siqishni Boshlash';
+            });
+    });
+</script>
+{% endblock %}

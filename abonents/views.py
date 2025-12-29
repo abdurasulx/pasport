@@ -178,6 +178,7 @@ from django.utils import timezone
 from django.http import HttpResponseForbidden
 from django import forms
 from .models import Abonent, Mahalla
+from .utils import compress_image
 import functools
 
 
@@ -332,6 +333,14 @@ def inspector_abonent_add(request):
         form = AbonentForm(request.POST, request.FILES, inspektor=inspektor)
         if form.is_valid():
             abonent = form.save(commit=False)
+            # If inspector uploaded an image, fix rotation before saving
+            if request.FILES.get('rasm'):
+                try:
+                    fixed = compress_image(request.FILES.get('rasm'), fix_rotation=True)
+                    abonent.rasm = fixed
+                except Exception:
+                    # If fix fails, continue with original file
+                    pass
             # Auto-set tuman from inspector
             if inspektor.tuman:
                 abonent.tuman = inspektor.tuman
@@ -357,6 +366,13 @@ def inspector_abonent_edit(request, pk):
         form = AbonentForm(request.POST, request.FILES, instance=abonent, inspektor=inspektor)
         if form.is_valid():
             abonent = form.save(commit=False)
+            # If inspector replaced the image, fix rotation before saving
+            if request.FILES.get('rasm'):
+                try:
+                    fixed = compress_image(request.FILES.get('rasm'), fix_rotation=True)
+                    abonent.rasm = fixed
+                except Exception:
+                    pass
             # Ensure tuman is set from inspector if not already set
             if inspektor.tuman and not abonent.tuman:
                 abonent.tuman = inspektor.tuman
@@ -657,6 +673,7 @@ def admin_abonent_list(request):
     inspektor_id = request.GET.get('inspektor')
     tuman_id = request.GET.get('tuman')
     mahalla_id = request.GET.get('mahalla')
+    pinfl_status = request.GET.get('pinfl_status')  # New filter
     
     abonentlar = Abonent.objects.select_related('tuman', 'mahalla', 'inspektor', 'inspektor__user').all()
     
@@ -686,6 +703,14 @@ def admin_abonent_list(request):
             abonentlar = abonentlar.filter(mahalla_id=mahalla_id)
         except (ValueError, TypeError):
             pass
+
+    # Filter by PINFL binding status
+    if pinfl_status == 'bound':
+        # Abonents with abonent_kod assigned
+        abonentlar = abonentlar.exclude(Q(abonent_kod__isnull=True) | Q(abonent_kod=''))
+    elif pinfl_status == 'unbound':
+        # Abonents without abonent_kod
+        abonentlar = abonentlar.filter(Q(abonent_kod__isnull=True) | Q(abonent_kod=''))
     
     paginator = Paginator(abonentlar, 20)
     page_number = request.GET.get('page', 1)
@@ -711,6 +736,7 @@ def admin_abonent_list(request):
         'selected_tuman': tuman_id,
         'mahallalar': mahallalar,
         'selected_mahalla': mahalla_id,
+        'pinfl_status': pinfl_status,  # Add to context
     })
 
 
@@ -768,6 +794,37 @@ def admin_abonent_edit(request, pk):
     abonent = get_object_or_404(Abonent, pk=pk)
     
     if request.method == 'POST':
+        # Handle rotate actions separately
+        rotate_action = request.POST.get('rotate')
+        if rotate_action in ('left', 'right'):
+            try:
+                from PIL import Image
+                import io
+                from django.core.files.uploadedfile import InMemoryUploadedFile
+
+                # Open current image
+                abonent.rasm.open('rb')
+                img = Image.open(abonent.rasm)
+                if rotate_action == 'left':
+                    img = img.rotate(90, expand=True)
+                else:
+                    img = img.rotate(-90, expand=True)
+
+                output = io.BytesIO()
+                img = img.convert('RGB')
+                img.save(output, format='JPEG', quality=90, optimize=True)
+                output.seek(0)
+
+                new_filename = f"{abonent.rasm.name.rsplit('.',1)[0]}_rot.jpg"
+                new_file = InMemoryUploadedFile(output, 'ImageField', new_filename, 'image/jpeg', output.tell(), None)
+                abonent.rasm = new_file
+                abonent.save(update_fields=['rasm'])
+                messages.success(request, "Rasm muvaffaqiyatli burildi va saqlandi.")
+                return redirect('admin-abonent-edit', pk=abonent.pk)
+            except Exception as e:
+                messages.error(request, f"Rasmni burishdan xatolik: {e}")
+                return redirect('admin-abonent-edit', pk=abonent.pk)
+
         abonent.pinfl = request.POST.get('pinfl')
         abonent.tuman_id = request.POST.get('tuman')
         abonent.mahalla_id = request.POST.get('mahalla')
@@ -897,3 +954,154 @@ def admin_pinfl_binding(request):
         'inspektorlar': inspektorlar,
         'selected_inspektor': selected_inspektor,
     })
+
+
+@admin_required
+def admin_fix_images(request):
+    """
+    Compress large abonent images to reduce file size.
+    - Only compresses images larger than 520KB
+    - Maintains original aspect ratio and orientation
+    - Reports all changes to admin
+    """
+    from django.http import JsonResponse
+    from PIL import Image
+    import io
+    from django.core.files.uploadedfile import InMemoryUploadedFile
+    
+    if request.method == 'POST':
+        # Get all abonents with images
+        abonents = Abonent.objects.exclude(rasm='').exclude(rasm__isnull=True)
+        
+        results = {
+            'total': 0,
+            'processed': 0,
+            'compressed': 0,
+            'errors': 0,
+            'details': []
+        }
+        
+        max_size_kb = 520
+        max_size_bytes = max_size_kb * 1024
+        
+        for abonent in abonents:
+            results['total'] += 1
+            try:
+                if not abonent.rasm:
+                    continue
+                
+                # Get original file size
+                try:
+                    original_size = abonent.rasm.size
+                except Exception:
+                    original_size = 0
+                
+                # Skip if already small enough
+                if original_size <= max_size_bytes:
+                    continue
+                
+                original_filename = abonent.rasm.name.split('/')[-1]
+                
+                # Open image
+                abonent.rasm.seek(0)
+                img = Image.open(abonent.rasm)
+                
+                # Convert RGBA to RGB if needed
+                if img.mode in ('RGBA', 'LA', 'P'):
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
+                    img = background
+                elif img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # Compress with progressively lower quality
+                quality = 95
+                output = io.BytesIO()
+                
+                while quality > 20:
+                    output.seek(0)
+                    output.truncate()
+                    
+                    img.save(
+                        output,
+                        format='JPEG',
+                        quality=quality,
+                        optimize=True,
+                        progressive=True
+                    )
+                    
+                    if output.tell() <= max_size_bytes:
+                        break
+                    
+                    quality -= 5
+                
+                # If still too large, resize the image
+                if output.tell() > max_size_bytes:
+                    scale_factor = 0.9
+                    while output.tell() > max_size_bytes and scale_factor > 0.3:
+                        output.seek(0)
+                        output.truncate()
+                        
+                        new_width = int(img.width * scale_factor)
+                        new_height = int(img.height * scale_factor)
+                        resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+                        
+                        resized_img.save(
+                            output,
+                            format='JPEG',
+                            quality=quality,
+                            optimize=True,
+                            progressive=True
+                        )
+                        
+                        scale_factor -= 0.1
+                
+                output.seek(0)
+                
+                # Create new filename
+                new_filename = f"{original_filename.rsplit('.', 1)[0]}.jpg"
+                
+                # Create new file
+                compressed_image = InMemoryUploadedFile(
+                    output,
+                    'ImageField',
+                    new_filename,
+                    'image/jpeg',
+                    output.tell(),
+                    None
+                )
+                
+                # Save compressed image
+                abonent.rasm.save(new_filename, compressed_image, save=True)
+                
+                # Get new size
+                try:
+                    new_size = abonent.rasm.size
+                except:
+                    new_size = output.tell()
+                
+                results['processed'] += 1
+                results['compressed'] += 1
+                
+                # Add detail
+                results['details'].append({
+                    'pinfl': abonent.pinfl,
+                    'original_size': f"{original_size / 1024:.1f} KB",
+                    'new_size': f"{new_size / 1024:.1f} KB",
+                    'saved': f"{(original_size - new_size) / 1024:.1f} KB"
+                })
+                
+            except Exception as e:
+                results['errors'] += 1
+                results['details'].append({
+                    'pinfl': abonent.pinfl if hasattr(abonent, 'pinfl') else 'Unknown',
+                    'error': str(e)
+                })
+        
+        return JsonResponse(results)
+    
+    # GET request - show the page with button
+    return render(request, 'admin_custom/fix_images.html')
+
