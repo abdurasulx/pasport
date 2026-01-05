@@ -1,0 +1,165 @@
+{% extends "admin_custom/base.html" %}
+
+{% block title %}Inspektor Hisoboti - {{ inspektor.user.get_full_name|default:inspektor.user.username }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-file-invoice"></i> Inspektor Hisoboti
+    </h1>
+    <a href="{% url 'admin-inspektor-list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Orqaga qaytish
+    </a>
+</div>
+
+<div class="card"
+    style="margin-bottom: 1.5rem; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white;">
+    <div class="card-body" style="display: flex; justify-content: space-around; padding: 2rem;">
+        <div style="text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: 700;">{{ total_count }}</div>
+            <div style="font-size: 0.875rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.05em;">Jami
+                Abonentlar</div>
+        </div>
+        <div style="width: 1px; background: rgba(255,255,255,0.2);"></div>
+        <div style="text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: 700;">{{ today_count }}</div>
+            <div style="font-size: 0.875rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.05em;">Bugun
+                Qo'shilgan</div>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- Selected Date breakdown -->
+    <div class="card">
+        <div class="card-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                <h2 style="margin: 0;">
+                    <i class="fas fa-calendar-day"></i>
+                    {% if selected_date_str == 'today' %}
+                    Bugun
+                    {% elif selected_date_str == 'yesterday' %}
+                    Kecha
+                    {% else %}
+                    {{ report_date|date:"d.m.Y" }}
+                    {% endif %}
+                </h2>
+                <div class="badge badge-primary">{{ selected_date_count }} ta</div>
+            </div>
+
+            <div
+                style="display: flex; gap: 0.5rem; width: 100%; overflow-x: auto; padding-bottom: 0.25rem; align-items: center;">
+                {% for d in active_dates %}
+                <a href="?date={{ d.date|date:'Y-m-d' }}"
+                    class="btn btn-sm {% if report_date == d.date %}btn-primary{% else %}btn-secondary{% endif %}"
+                    style="white-space: nowrap; flex-shrink: 0;">
+                    {% if d.is_today %}
+                    Bugun
+                    {% elif d.is_yesterday %}
+                    Kecha
+                    {% else %}
+                    {{ d.date|date:"d.m" }}
+                    {% endif %}
+                    <span style="opacity: 0.8; font-size: 0.7rem; margin-left: 2px;">({{ d.count }} ta)</span>
+                </a>
+                {% endfor %}
+                <form method="get" style="display: flex; gap: 0.25rem; flex-shrink: 0;">
+                    <input type="date" name="date" class="form-control"
+                        style="padding: 0.25rem 0.5rem; height: 32px; font-size: 0.75rem; width: 120px;"
+                        value="{{ report_date|date:'Y-m-d' }}" onchange="this.form.submit()">
+                </form>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            {% if selected_date_mahalla_stats %}
+            <table class="table" style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Mahalla</th>
+                        <th style="text-align: right;">Soni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in selected_date_mahalla_stats %}
+                    <tr>
+                        <td>{{ stat.mahalla__nomi }}</td>
+                        <td style="text-align: right; font-weight: 600;">{{ stat.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                Ushbu sana uchun ma'lumot kiritilmagan
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Total breakdown -->
+    <div class="card">
+        <div class="card-header">
+            <h2 style="margin: 0;"><i class="fas fa-chart-pie"></i> Umumiy (Mahallalar kesimida)</h2>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            {% if total_mahalla_stats %}
+            <table class="table" style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Mahalla</th>
+                        <th style="text-align: right;">Soni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in total_mahalla_stats %}
+                    <tr>
+                        <td>{{ stat.mahalla__nomi }}</td>
+                        <td style="text-align: right; font-weight: 600;">{{ stat.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                Ma'lumotlar mavjud emas
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- History Log -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2 style="margin: 0;"><i class="fas fa-history"></i> So'nggi 30 kunlik faoliyat</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if daily_log %}
+        <table class="table" style="margin: 0;">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th style="text-align: right;">Kiritilgan abonentlar soni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in daily_log %}
+                <tr>
+                    <td>{{ log.date|date:"d.m.Y" }}</td>
+                    <td style="text-align: right;">
+                        <span class="badge {% if log.count > 10 %}badge-success{% else %}badge-primary{% endif %}">
+                            {{ log.count }} ta
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+            Oxirgi 30 kun ichida faoliyat kuzatilmadi
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

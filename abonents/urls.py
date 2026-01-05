@@ -53,6 +53,7 @@ custom_admin_patterns = [
     path('inspektorlar/add/', views.admin_inspektor_add, name='admin-inspektor-add'),
     path('inspektorlar/<int:pk>/edit/', views.admin_inspektor_edit, name='admin-inspektor-edit'),
     path('inspektorlar/<int:pk>/delete/', views.admin_inspektor_delete, name='admin-inspektor-delete'),
+    path('inspektorlar/<int:pk>/hisobot/', views.admin_inspektor_report, name='admin-inspektor-report'),
     
     # Abonent CRUD
     path('abonentlar/', views.admin_abonent_list, name='admin-abonent-list'),

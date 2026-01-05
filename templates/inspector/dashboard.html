@@ -25,6 +25,83 @@
     </div>
 </div>
 
+<!-- Daily Report Section -->
+<div class="card" style="margin-bottom: 1rem;">
+    <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+            <h2><i class="fas fa-chart-pie"></i> Hisobot ({% if selected_date_str == 'today' %}Bugun{% elif
+                selected_date_str == 'yesterday' %}Kecha{% else %}{{ report_date|date:"d.m.Y" }}{% endif %})</h2>
+            <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">{{ date_added_count }}</div>
+        </div>
+
+        <div
+            style="display: flex; gap: 0.5rem; width: 100%; overflow-x: auto; padding-bottom: 0.25rem; align-items: center;">
+            {% for d in active_dates %}
+            <a href="?date={{ d.date|date:'Y-m-d' }}"
+                class="btn btn-sm {% if report_date == d.date %}btn-primary{% else %}btn-secondary{% endif %}"
+                style="white-space: nowrap; flex-shrink: 0; padding: 0.4rem 0.75rem;">
+                {% if d.is_today %}Bugun{% elif d.is_yesterday %}Kecha{% else %}{{ d.date|date:"d.m" }}{% endif %}
+                <span style="opacity: 0.8; font-size: 0.7rem; margin-left: 2px;">({{ d.count }} ta)</span>
+            </a>
+            {% endfor %}
+            <form method="get" style="display: flex; gap: 0.25rem; flex-shrink: 0;">
+                <input type="date" name="date" class="form-control"
+                    style="padding: 0.25rem 0.5rem; height: 32px; font-size: 0.75rem; width: 120px;"
+                    value="{{ report_date|date:'Y-m-d' }}" onchange="this.form.submit()">
+            </form>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if selected_date_mahalla_stats %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: var(--gray-50); border-bottom: 1px solid var(--gray-200);">
+                    <th
+                        style="padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; color: var(--gray-500); text-transform: uppercase;">
+                        Mahalla</th>
+                    <th
+                        style="padding: 0.75rem 1rem; text-align: right; font-size: 0.75rem; color: var(--gray-500); text-transform: uppercase;">
+                        Abonent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in selected_date_mahalla_stats %}
+                <tr style="border-bottom: 1px solid var(--gray-100);">
+                    <td style="padding: 0.75rem 1rem; font-size: 0.875rem;">{{ stat.mahalla__nomi }}</td>
+                    <td style="padding: 0.75rem 1rem; font-size: 0.875rem; text-align: right; font-weight: 600;">{{
+                        stat.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="padding: 1.5rem; text-align: center; color: var(--gray-500); font-size: 0.875rem;">
+            Tanlangan sana uchun abonent qo'shilmagan
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 7-day trend -->
+{% if daily_trend %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h2><i class="fas fa-chart-line"></i> So'nggi 7 kunlik trend</h2>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; align-items: flex-end; gap: 0.5rem; height: 100px; padding-top: 1rem;">
+            {% for day in daily_trend %}
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                <div style="width: 100%; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 4px; height: {{ day.height }}px; max-height: 80px;"
+                    title="{{ day.count }} ta"></div>
+                <div style="font-size: 0.625rem; color: var(--gray-400);">{{ day.date|date:"d.m" }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Quick Actions -->
 <div class="card">
     <div class="card-header">

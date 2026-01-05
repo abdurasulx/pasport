@@ -11,36 +11,64 @@
 <div class="card" style="margin-bottom: 1.5rem;">
     <div class="card-body">
         <form method="get" id="filter-form">
-            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: end;">
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Tuman</label>
                     <select name="tuman" id="id_tuman" class="form-control" onchange="this.form.submit()">
                         <option value="">Tumanni tanlang</option>
-                        {% for tuman in tumanlar %}<option value="{{ tuman.pk }}" {% if selected_tuman == tuman.pk %}selected{% endif %}>{{ tuman.nomi }}</option>{% endfor %}
+                        {% for tuman in tumanlar %}
+                        <option value="{{ tuman.pk }}" {% if selected_tuman == tuman.pk %}selected{% endif %}>
+                            {{ tuman.nomi }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="form-group" style="margin: 0;" id="mahalla-wrapper" {% if not selected_tuman %}hidden{% endif %}>
                     <label class="form-label">Mahalla</label>
-                    <select name="mahalla" id="id_mahalla" class="form-control">
-                        <option value="">Mahallani tanlang</option>
-                        {% for mahalla in filtered_mahallalar %}<option value="{{ mahalla.pk }}" {% if selected_mahalla == mahalla.pk %}selected{% endif %}>{{ mahalla.nomi }}</option>{% endfor %}
-                    </select>   
+                    <select name="mahalla" id="id_mahalla" class="form-control" onchange="this.form.submit()">
+                        <option value="">Barcha mahallalar</option>
+                        {% for mahalla in filtered_mahallalar %}
+                        <option value="{{ mahalla.pk }}" {% if selected_mahalla == mahalla.pk %}selected{% endif %}>
+                            {{ mahalla.nomi }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                {% if inspektorlar %}
+                {% if selected_tuman %}
                 <div class="form-group" style="margin: 0;">
+                    <label class="form-label">Sana</label>
+                    <select name="date" class="form-control" onchange="this.form.submit()">
+                        <option value="">Barcha sanalar</option>
+                        {% for date_item in available_dates %}
+                        <option value="{{ date_item.date|date:'Y-m-d' }}" {% if selected_date == date_item.date|date:'Y-m-d' %}selected{% endif %}>
+                            {{ date_item.date|date:'d.m.Y' }} ({{ date_item.count }} ta abonent)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="form-group" style="margin: 0;">
+                    <button type="submit" class="btn btn-primary" {% if not selected_tuman %}disabled{% endif %} style="height: 38px;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            {% if inspektorlar %}
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; align-items: end;">
+                <div class="form-group" style="margin: 0; flex: 1;">
                     <label class="form-label">Inspektor</label>
                     <select name="inspektor" id="id_inspektor" class="form-control" onchange="this.form.submit()">
                         <option value="">Barcha inspektorlar</option>
                         {% for insp in inspektorlar %}
                         <option value="{{ insp.id }}" {% if selected_inspektor|stringformat:"s" == insp.id|stringformat:"s" %}selected{% endif %}>
-                            {{ insp.user.get_full_name|default:insp.user.username }}</option>
+                            {{ insp.user.get_full_name|default:insp.user.username }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
-                {% endif %}
-                <button type="submit" class="btn btn-primary" {% if not selected_tuman %}disabled{% endif %}><i
-                        class="fas fa-search"></i> Ko'rsatish</button>
+                <div style="flex: 2;"></div>
             </div>
+            {% endif %}
         </form>
     </div>
 </div>
@@ -53,32 +81,36 @@
     <div class="card-body">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
             <div>
-                <h4 style="margin-bottom: 1rem; font-size: 0.875rem; color: var(--text-muted);">Abonentlar (tartib
-                    bo'yicha)</h4>
+                <h4 style="margin-bottom: 1rem; font-size: 0.875rem; color: var(--text-muted);">
+                    Abonentlar (tartib bo'yicha)
+                </h4>
                 <ol style="margin: 0; padding-left: 1.5rem;">
-                    {% for abonent in abonentlar %}<li
-                        style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);"><strong>{{ abonent.pinfl
-                            }}</strong></li>{% endfor %}
+                    {% for abonent in abonentlar %}
+                    <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                        <strong>{{ abonent.pinfl }}</strong>
+                        {% if not selected_mahalla %}
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">{{ abonent.mahalla.nomi }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
                 </ol>
             </div>
             <div>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="mahalla_id" value="{{ selected_mahalla }}">
-                    <input type="hidden" name="abonent_ids"
-                        value="{% for a in abonentlar %}{{ a.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                    <input type="hidden" name="abonent_ids" value="{% for a in abonentlar %}{{ a.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
                     <input type="hidden" id="max_lines" value="{{ abonentlar|length }}">
-                    <h4 style="margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Abonent raqamlar
-                        (har bir qator - bir abonent)</h4>
-                    <p style="font-size: 0.75rem; color: var(--secondary); margin-bottom: 0.5rem;">Maksimum {{
-                        abonentlar|length }} ta qator</p>
-                    <textarea name="abonent_kodlar" id="kodlar" class="form-control" rows="{{ abonentlar|length }}"
-                        placeholder="A-001&#10;A-002&#10;A-003" style="font-family: monospace;"></textarea>
-
-
-
-                    <button type="submit" class="btn btn-success" style="margin-top: 1rem; width: 100%;"><i
-                            class="fas fa-save"></i> Barchasini saqlash</button>
+                    <h4 style="margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">
+                        Abonent raqamlar (har bir qator - bir abonent)
+                    </h4>
+                    <p style="font-size: 0.75rem; color: var(--secondary); margin-bottom: 0.5rem;">
+                        Maksimum {{ abonentlar|length }} ta qator
+                    </p>
+                    <textarea name="abonent_kodlar" id="kodlar" class="form-control" rows="{{ abonentlar|length }}" placeholder="A-001&#10;A-002&#10;A-003" style="font-family: monospace;"></textarea>
+                    <button type="submit" class="btn btn-success" style="margin-top: 1rem; width: 100%;">
+                        <i class="fas fa-save"></i> Barchasini saqlash
+                    </button>
                 </form>
             </div>
         </div>

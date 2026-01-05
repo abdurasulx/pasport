@@ -4,7 +4,8 @@ Abonent views - API endpointlar uchun viewlar.
 
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Count
+from django.db.models.functions import TruncDate
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -284,14 +285,75 @@ def inspector_dashboard(request):
     today = timezone.now().date()
     inspektor = request.user.inspektor_profile
     
+    # Date filter from request
+    selected_date_str = request.GET.get('date', 'today')
+    if selected_date_str == 'today':
+        report_date = today
+    elif selected_date_str == 'yesterday':
+        from datetime import timedelta
+        report_date = today - timedelta(days=1)
+    else:
+        try:
+            report_date = timezone.datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            report_date = today
+
     # Filter by inspector
     my_abonents = Abonent.objects.filter(inspektor=inspektor)
     
+    # Statistics grouped by mahalla for the selected date
+    selected_date_mahalla_stats = my_abonents.filter(yaratilgan_vaqt__date=report_date).values(
+        'mahalla__nomi'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Daily trend for the last 7 days
+    from datetime import timedelta
+    seven_days_ago = today - timedelta(days=6)
+    daily_trend_queryset = my_abonents.filter(yaratilgan_vaqt__date__gte=seven_days_ago).annotate(
+        date=TruncDate('yaratilgan_vaqt')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Calculate display height for trend bars
+    daily_trend = []
+    max_count = max((d['count'] for d in daily_trend_queryset), default=0)
+    for d in daily_trend_queryset:
+        height = (d['count'] / max_count * 80) if max_count > 0 else 4
+        daily_trend.append({
+            'date': d['date'],
+            'count': d['count'],
+            'height': max(4, int(height))
+        })
+    
+    # Calculate active dates for buttons (most recent 5 active days)
+    active_dates_queryset = my_abonents.annotate(
+        date=TruncDate('yaratilgan_vaqt')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('-date')[:5]
+    
+    active_dates = []
+    for d in active_dates_queryset:
+        active_dates.append({
+            'date': d['date'],
+            'count': d['count'],
+            'is_today': d['date'] == today,
+            'is_yesterday': d['date'] == (today - timedelta(days=1))
+        })
+
     context = {
         'today': today,
+        'report_date': report_date,
+        'selected_date_str': selected_date_str,
+        'active_dates': active_dates,
         'total_abonents': my_abonents.count(),
-        'today_added': my_abonents.filter(yaratilgan_vaqt__date=today).count(),
+        'date_added_count': my_abonents.filter(yaratilgan_vaqt__date=report_date).count(),
         'recent_abonents': my_abonents.order_by('-yaratilgan_vaqt')[:5],
+        'selected_date_mahalla_stats': selected_date_mahalla_stats,
+        'daily_trend': daily_trend,
     }
     return render(request, 'inspector/dashboard.html', context)
 
@@ -662,6 +724,79 @@ def admin_inspektor_delete(request, pk):
     return render(request, 'admin_custom/inspektor_delete.html', {'inspektor': inspektor})
 
 
+@admin_required
+def admin_inspektor_report(request, pk):
+    """Detailed report for a specific inspector."""
+    inspektor = get_object_or_404(Inspektor, pk=pk)
+    today = timezone.now().date()
+    
+    # Date filter from request
+    selected_date_str = request.GET.get('date', 'today')
+    if selected_date_str == 'today':
+        report_date = today
+    elif selected_date_str == 'yesterday':
+        from datetime import timedelta
+        report_date = today - timedelta(days=1)
+    else:
+        try:
+            report_date = timezone.datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            report_date = today
+
+    # Total registrations by mahalla
+    total_mahalla_stats = Abonent.objects.filter(inspektor=inspektor).values(
+        'mahalla__nomi'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Registrations by mahalla for the selected date
+    selected_date_mahalla_stats = Abonent.objects.filter(inspektor=inspektor, yaratilgan_vaqt__date=report_date).values(
+        'mahalla__nomi'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Daily breakdown for the last 30 days
+    from datetime import timedelta
+    thirty_days_ago = today - timedelta(days=29)
+    daily_log = Abonent.objects.filter(inspektor=inspektor, yaratilgan_vaqt__date__gte=thirty_days_ago).annotate(
+        date=TruncDate('yaratilgan_vaqt')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('-date')
+    
+    # Calculate active dates for buttons (most recent 5 active days)
+    active_dates_queryset = Abonent.objects.filter(inspektor=inspektor).annotate(
+        date=TruncDate('yaratilgan_vaqt')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('-date')[:5]
+    
+    active_dates = []
+    for d in active_dates_queryset:
+        active_dates.append({
+            'date': d['date'],
+            'count': d['count'],
+            'is_today': d['date'] == today,
+            'is_yesterday': d['date'] == (today - timedelta(days=1))
+        })
+    
+    context = {
+        'inspektor': inspektor,
+        'today': today,
+        'report_date': report_date,
+        'selected_date_str': selected_date_str,
+        'active_dates': active_dates,
+        'total_mahalla_stats': total_mahalla_stats,
+        'selected_date_mahalla_stats': selected_date_mahalla_stats,
+        'daily_log': daily_log,
+        'total_count': sum(m['count'] for m in total_mahalla_stats),
+        'selected_date_count': sum(m['count'] for m in selected_date_mahalla_stats),
+    }
+    return render(request, 'admin_custom/inspektor_report.html', context)
+
+
 # =============================================================================
 # ADMIN ABONENT CRUD
 # =============================================================================
@@ -875,6 +1010,7 @@ def admin_pinfl_binding(request):
     selected_tuman = request.GET.get('tuman')
     selected_mahalla = request.GET.get('mahalla')
     selected_inspektor = request.GET.get('inspektor') # new filter
+    selected_date = request.GET.get('date') # new filter
     
     abonentlar = []
     mahalla_nomi = ''
@@ -886,27 +1022,42 @@ def admin_pinfl_binding(request):
         filtered_mahallalar = Mahalla.objects.filter(tuman_id=selected_tuman)
         inspektorlar = Inspektor.objects.filter(tuman_id=selected_tuman).select_related('user')
         
-    if selected_mahalla:
-        selected_mahalla = int(selected_mahalla)
-        mahalla = Mahalla.objects.filter(pk=selected_mahalla).first()
-        if mahalla:
-            mahalla_nomi = mahalla.nomi
-            # Only show abonents without abonent_kod (empty)
-            queryset = Abonent.objects.filter(
-                mahalla=mahalla
-            ).filter(
-                Q(abonent_kod__isnull=True) | Q(abonent_kod='')
-            )
+        # Base queryset for the selected tuman
+        unbound_base_queryset = Abonent.objects.filter(tuman_id=selected_tuman).filter(
+            Q(abonent_kod__isnull=True) | Q(abonent_kod='')
+        )
+        
+        # Apply mahalla filter if selected
+        if selected_mahalla:
+            selected_mahalla = int(selected_mahalla)
+            mahalla = Mahalla.objects.filter(pk=selected_mahalla).first()
+            if mahalla:
+                mahalla_nomi = mahalla.nomi
+                unbound_base_queryset = unbound_base_queryset.filter(mahalla=mahalla)
+        else:
+            mahalla_nomi = "Barcha mahallalar"
             
-            # Apply inspector filter if selected
-            if selected_inspektor:
-                try:
-                    selected_inspektor = int(selected_inspektor)
-                    queryset = queryset.filter(inspektor_id=selected_inspektor)
-                except (ValueError, TypeError):
-                    pass
+        # Apply inspector filter if selected
+        if selected_inspektor:
+            try:
+                selected_inspektor = int(selected_inspektor)
+                unbound_base_queryset = unbound_base_queryset.filter(inspektor_id=selected_inspektor)
+            except (ValueError, TypeError):
+                pass
+        
+        # Calculate available dates with counts
+        available_dates = unbound_base_queryset.annotate(
+            date=TruncDate('yaratilgan_vaqt')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('-date')
+                
+        # Apply date filter if selected
+        queryset = unbound_base_queryset
+        if selected_date:
+            queryset = queryset.filter(yaratilgan_vaqt__date=selected_date)
             
-            abonentlar = queryset.order_by('id')
+        abonentlar = queryset.select_related('mahalla').order_by('id')
     
     if request.method == 'POST':
         abonent_ids = request.POST.get('abonent_ids', '')
@@ -939,9 +1090,13 @@ def admin_pinfl_binding(request):
                 messages.success(request, f"{updated} ta abonent raqami saqlandi!")
             
             # Preserve filters in redirect
-            redirect_url = f"{request.path}?tuman={selected_tuman}&mahalla={mahalla_id}"
+            redirect_url = f"{request.path}?tuman={selected_tuman}"
+            if selected_mahalla:
+                redirect_url += f"&mahalla={selected_mahalla}"
             if selected_inspektor:
                 redirect_url += f"&inspektor={selected_inspektor}"
+            if selected_date:
+                redirect_url += f"&date={selected_date}"
             return redirect(redirect_url)
     
     return render(request, 'admin_custom/pinfl_binding.html', {
@@ -949,10 +1104,12 @@ def admin_pinfl_binding(request):
         'filtered_mahallalar': filtered_mahallalar,
         'selected_tuman': selected_tuman,
         'selected_mahalla': selected_mahalla,
+        'selected_inspektor': selected_inspektor,
+        'selected_date': selected_date,
+        'available_dates': available_dates if selected_tuman else [],
+        'inspektorlar': inspektorlar,
         'abonentlar': abonentlar,
         'mahalla_nomi': mahalla_nomi,
-        'inspektorlar': inspektorlar,
-        'selected_inspektor': selected_inspektor,
     })
 
 
