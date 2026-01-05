@@ -27,10 +27,18 @@
 
 <!-- Daily Report Section -->
 <div class="card" style="margin-bottom: 1rem;">
-    <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 0.75rem;">
+    <div class="card-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem;">
         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-            <h2><i class="fas fa-chart-pie"></i> Hisobot ({% if selected_date_str == 'today' %}Bugun{% elif
-                selected_date_str == 'yesterday' %}Kecha{% else %}{{ report_date|date:"d.m.Y" }}{% endif %})</h2>
+            <h2 style="margin: 0;">
+                <i class="fas fa-chart-pie"></i> Hisobot
+                ({% if selected_date_str == 'today' %}
+                Bugun
+                {% elif selected_date_str == 'yesterday' %}
+                Kecha
+                {% else %}
+                {{ report_date|date:"d.m.Y" }}
+                {% endif %})
+            </h2>
             <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">{{ date_added_count }}</div>
         </div>
 
@@ -40,7 +48,13 @@
             <a href="?date={{ d.date|date:'Y-m-d' }}"
                 class="btn btn-sm {% if report_date == d.date %}btn-primary{% else %}btn-secondary{% endif %}"
                 style="white-space: nowrap; flex-shrink: 0; padding: 0.4rem 0.75rem;">
-                {% if d.is_today %}Bugun{% elif d.is_yesterday %}Kecha{% else %}{{ d.date|date:"d.m" }}{% endif %}
+                {% if d.is_today %}
+                Bugun
+                {% elif d.is_yesterday %}
+                Kecha
+                {% else %}
+                {{ d.date|date:"d.m" }}
+                {% endif %}
                 <span style="opacity: 0.8; font-size: 0.7rem; margin-left: 2px;">({{ d.count }} ta)</span>
             </a>
             {% endfor %}
@@ -58,18 +72,21 @@
                 <tr style="background: var(--gray-50); border-bottom: 1px solid var(--gray-200);">
                     <th
                         style="padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; color: var(--gray-500); text-transform: uppercase;">
-                        Mahalla</th>
+                        Mahalla
+                    </th>
                     <th
                         style="padding: 0.75rem 1rem; text-align: right; font-size: 0.75rem; color: var(--gray-500); text-transform: uppercase;">
-                        Abonent</th>
+                        Abonent
+                    </th>
                 </tr>
             </thead>
             <tbody>
                 {% for stat in selected_date_mahalla_stats %}
                 <tr style="border-bottom: 1px solid var(--gray-100);">
                     <td style="padding: 0.75rem 1rem; font-size: 0.875rem;">{{ stat.mahalla__nomi }}</td>
-                    <td style="padding: 0.75rem 1rem; font-size: 0.875rem; text-align: right; font-weight: 600;">{{
-                        stat.count }}</td>
+                    <td style="padding: 0.75rem 1rem; font-size: 0.875rem; text-align: right; font-weight: 600;">
+                        {{ stat.count }}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -86,7 +103,7 @@
 {% if daily_trend %}
 <div class="card" style="margin-bottom: 1.5rem;">
     <div class="card-header">
-        <h2><i class="fas fa-chart-line"></i> So'nggi 7 kunlik trend</h2>
+        <h2 style="margin: 0;"><i class="fas fa-chart-line"></i> So'nggi 7 kunlik trend</h2>
     </div>
     <div class="card-body">
         <div style="display: flex; align-items: flex-end; gap: 0.5rem; height: 100px; padding-top: 1rem;">
@@ -105,7 +122,7 @@
 <!-- Quick Actions -->
 <div class="card">
     <div class="card-header">
-        <h2><i class="fas fa-bolt"></i> Tezkor harakatlar</h2>
+        <h2 style="margin: 0;"><i class="fas fa-bolt"></i> Tezkor harakatlar</h2>
     </div>
     <div class="card-body">
         <a href="{% url 'inspector-abonent-add' %}" class="btn btn-primary btn-block btn-lg"
@@ -123,7 +140,7 @@
 <!-- Recent Abonents -->
 <div class="card">
     <div class="card-header">
-        <h2><i class="fas fa-clock"></i> So'nggi qo'shilganlar</h2>
+        <h2 style="margin: 0;"><i class="fas fa-clock"></i> So'nggi qo'shilganlar</h2>
         <a href="{% url 'inspector-abonent-list' %}"
             style="color: var(--primary); font-size: 0.875rem; text-decoration: none;">
             Barchasi <i class="fas fa-chevron-right"></i>
@@ -146,7 +163,7 @@
                 <div class="abonent-name">{{ abonent.familiya }} {{ abonent.ism }}</div>
                 <div class="abonent-meta">
                     <i class="fas fa-id-badge"></i> {{ abonent.abonent_kod }} ·
-                    <i class="fas fa-calendar"></i> {{ abonent.yaratilgan_vaqt|date:"Y:m:d H:i" }}
+                    <i class="fas fa-calendar"></i> {{ abonent.yaratilgan_vaqt|date:"Y-m-d H:i" }}
                 </div>
             </div>
             <a href="{% url 'inspector-abonent-edit' abonent.id %}" class="action-btn action-btn-edit">
