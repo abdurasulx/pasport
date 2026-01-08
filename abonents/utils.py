@@ -11,6 +11,209 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+def simple_compress_image(image_field, max_size_kb=520):
+    """
+    Simple image compression - ONLY compresses file size, no rotation or cropping.
+    
+    This function:
+    - Preserves original orientation (no EXIF rotation)
+    - Preserves original aspect ratio (no cropping)
+    - Only reduces quality/resolution to fit under max_size_kb
+    - Keeps the original filename
+    
+    Args:
+        image_field: Django ImageField or UploadedFile
+        max_size_kb: Maximum file size in kilobytes (default: 520KB)
+    
+    Returns:
+        InMemoryUploadedFile: Compressed image file
+    """
+    if not image_field:
+        return image_field
+    
+    max_size_bytes = max_size_kb * 1024
+    
+    # If already small enough, don't reprocess
+    try:
+        if image_field.size <= max_size_bytes:
+            return image_field
+    except Exception:
+        pass
+    
+    # CRITICAL: Strip ALL EXIF data BEFORE opening with PIL
+    # This prevents PIL from auto-rotating based on EXIF orientation
+    try:
+        # Read image as bytes
+        image_field.seek(0)
+        image_bytes = image_field.read()
+        
+        # Open with PIL but immediately save without EXIF to strip metadata
+        temp_buffer = io.BytesIO(image_bytes)
+        img_temp = Image.open(temp_buffer)
+        
+        # Create a clean buffer without any EXIF data
+        clean_buffer = io.BytesIO()
+        img_temp.save(clean_buffer, format=img_temp.format or 'JPEG', exif=b'')
+        
+        # Now open the clean image (no EXIF, no rotation will happen)
+        clean_buffer.seek(0)
+        img = Image.open(clean_buffer)
+        
+    except Exception as e:
+        logger.error(f"Failed to open image: {e}")
+        return image_field
+    
+    # RGB normalize + clean buffer (IMPORTANT)
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    img = img.copy()  # Clean buffer to avoid corruption
+    
+    output = io.BytesIO()
+    
+    # Step 1: Compress with quality reduction only
+    quality = 90
+    while quality >= 40:
+        output.seek(0)
+        output.truncate()
+        
+        img.save(
+            output,
+            "JPEG",
+            quality=quality,
+            subsampling=2  # Better compression
+        )
+        
+        if output.tell() <= max_size_bytes:
+            break
+        
+        quality -= 5
+    
+    # Step 2: If still too large, resize
+    if output.tell() > max_size_bytes:
+        width, height = img.size
+        scale = 0.9
+        
+        while scale >= 0.4:
+            output.seek(0)
+            output.truncate()
+            
+            new_size = (
+                int(width * scale),
+                int(height * scale)
+            )
+            
+            resized = img.resize(new_size, Image.BILINEAR)
+            resized = resized.copy()  # Clean buffer
+            
+            resized.save(
+                output,
+                "JPEG",
+                quality=quality,
+                subsampling=2
+            )
+            
+            if output.tell() <= max_size_bytes:
+                break
+            
+            scale -= 0.1
+    
+    output.seek(0)
+    
+    # Preserve filename
+    name = image_field.name.rsplit("/", 1)[-1]
+    if not name.lower().endswith((".jpg", ".jpeg")):
+        name = name.rsplit(".", 1)[0] + ".jpg"
+    
+    return InMemoryUploadedFile(
+        output,
+        "ImageField",
+        name,
+        "image/jpeg",
+        output.tell(),
+        None
+    )
+
+
+def compress_jpeg_no_rotation(input_path, output_path, max_size_kb=520):
+    """
+    Compress JPEG without any rotation - strips EXIF completely.
+    
+    Uses PIL but re-saves WITHOUT loading image first to prevent rotation.
+    
+    Args:
+        input_path: Path to input image
+        output_path: Path to output image
+        max_size_kb: Max size in KB
+    
+    Returns:
+        bool: Success
+    """
+    import subprocess
+    
+    max_size_bytes = max_size_kb * 1024
+    
+    try:
+        # Method: Use jpegtran (lossless JPEG tool) to strip EXIF first
+        # Then use ImageMagick for compression
+        
+        # Step 1: Strip EXIF with jpegtran (lossless, no re-encoding)
+        temp_stripped = input_path + '.tmp_stripped.jpg'
+        
+        # Try jpegtran if available
+        try:
+            cmd = ['jpegtran', '-copy', 'none', '-outfile', temp_stripped, input_path]
+            result = subprocess.run(cmd, capture_output=True)
+            if result.returncode == 0:
+                input_file = temp_stripped
+            else:
+                # jpegtran not available, use original
+                input_file = input_path
+        except:
+            input_file = input_path
+        
+        # Step 2: Compress with convert (no auto-orient)
+        quality = 90
+        while quality >= 40:
+            cmd = [
+                'convert',
+                input_file,
+               '-define', 'jpeg:preserve-settings',
+                '-quality', str(quality),
+                output_path
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                logger.error(f"Convert error: {result.stderr}")
+                # Cleanup temp file
+                if input_file != input_path and os.path.exists(input_file):
+                    os.remove(input_file)
+                return False
+            
+            file_size = os.path.getsize(output_path)
+            
+            if file_size <= max_size_bytes:
+                logger.info(f"Compressed: {file_size / 1024:.2f}KB (quality={quality})")
+                # Cleanup temp file
+                if input_file != input_path and os.path.exists(input_file):
+                    os.remove(input_file)
+                return True
+            
+            quality -= 10
+        
+        # Cleanup temp file
+        if input_file != input_path and os.path.exists(input_file):
+            os.remove(input_file)
+        
+        logger.warning(f"Could not compress to {max_size_kb}KB")
+        return False
+        
+    except Exception as e:
+        logger.error(f"Compression failed: {e}")
+        return False
+
+
 def compress_image(image_field, max_size_kb=520, fix_rotation=False):
     """
     Compress an image to a maximum file size while creating a square crop.
@@ -187,9 +390,19 @@ def compress_image(image_field, max_size_kb=520, fix_rotation=False):
     
     output.seek(0)
     
-    # Get the original filename without extension
-    original_name = image_field.name.rsplit('.', 1)[0]
-    new_filename = f"{original_name.split('/')[-1]}.{extension}"
+    # Get the original filename - preserve it exactly as uploaded
+    if hasattr(image_field, 'name') and image_field.name:
+        # Keep the original filename
+        original_name = image_field.name
+        if '/' in original_name:
+            # If it has a path, extract just the filename
+            new_filename = original_name.split('/')[-1]
+        else:
+            new_filename = original_name
+    else:
+        # Fallback: create filename from field name
+        original_name = getattr(image_field, 'name', 'image.jpg')
+        new_filename = f"{original_name.rsplit('.', 1)[0]}.{extension}"
     
     # Create a new InMemoryUploadedFile
     compressed_image = InMemoryUploadedFile(

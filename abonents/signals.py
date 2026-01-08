@@ -2,11 +2,12 @@
 Signal handlers for Abonent model - handles image compression automatically.
 """
 
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from .models import Abonent
-from .utils import compress_image
+from .utils import simple_compress_image
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -14,47 +15,59 @@ logger = logging.getLogger(__name__)
 @receiver(pre_save, sender=Abonent)
 def compress_abonent_image(sender, instance, **kwargs):
     """
-    Compress abonent image before saving.
+    PRE-SAVE: Do nothing - let the image save as-is.
     
-    This signal handler is triggered before an Abonent instance is saved.
-    It only compresses the image if a new file is being uploaded.
+    Compression will happen in POST-SAVE signal to preserve original orientation.
     """
-    # Only process if rasm field has data
+    # Only log - don't modify the image
+    if instance.rasm:
+        if not instance.pk:
+            logger.info(f"New abonent image for PINFL: {instance.pinfl} (will save original first)")
+        else:
+            try:
+                old_instance = Abonent.objects.get(pk=instance.pk)
+                old_image_name = old_instance.rasm.name if old_instance.rasm else None
+                new_image_name = instance.rasm.name if instance.rasm else None
+                
+                if old_image_name != new_image_name:
+                    logger.info(f"Image changed for abonent PINFL: {instance.pinfl} (will save original first)")
+            except Abonent.DoesNotExist:
+                pass
+
+
+@receiver(post_save, sender=Abonent)
+def compress_saved_image(sender, instance, created, **kwargs):
+    """
+    POST-SAVE: Compress using ImageMagick (no EXIF auto-rotation)
+    
+    Images are first saved as-is, then compressed with ImageMagick
+    which does NOT auto-rotate based on EXIF data.
+    """
     if not instance.rasm:
         return
     
     try:
-        # For new instances (no pk yet), always compress
-        if not instance.pk:
-            logger.info(f"New abonent, compressing image for PINFL: {instance.pinfl}")
-            instance.rasm = compress_image(instance.rasm)
-            logger.info(f"Image compressed successfully")
+        file_path = instance.rasm.path
+        file_size = os.path.getsize(file_path)
+        max_size = 520 * 1024  # 520KB
+        
+        if file_size <= max_size:
+            logger.info(f"Image already under 520KB ({file_size / 1024:.2f}KB), skipping compression")
             return
         
-        # For existing instances, check if image was changed
-        try:
-            old_instance = Abonent.objects.get(pk=instance.pk)
-            
-            # Compare the file names to detect if image changed
-            old_image_name = old_instance.rasm.name if old_instance.rasm else None
-            new_image_name = instance.rasm.name if instance.rasm else None
-            
-            # If names are different, it's a new upload
-            if old_image_name != new_image_name:
-                logger.info(f"Image changed for abonent PINFL: {instance.pinfl}")
-                logger.info(f"  Old: {old_image_name}")
-                logger.info(f"  New: {new_image_name}")
-                instance.rasm = compress_image(instance.rasm)
-                logger.info(f"Image compressed successfully")
-            else:
-                logger.debug(f"Image not changed for abonent PINFL: {instance.pinfl}, skipping compression")
-                
-        except Abonent.DoesNotExist:
-            # Old instance doesn't exist (shouldn't happen), compress anyway
-            logger.warning(f"Old instance not found for pk={instance.pk}, compressing image")
-            instance.rasm = compress_image(instance.rasm)
+        logger.info(f"Compressing for PINFL: {instance.pinfl} ({file_size / 1024:.2f}KB)")
+        
+        # Import here to avoid circular import
+        from .utils import compress_jpeg_no_rotation
+        
+        # Compress in-place (same filename)
+        success = compress_jpeg_no_rotation(file_path, file_path, max_size_kb=520)
+        
+        if success:
+            new_size = os.path.getsize(file_path)
+            logger.info(f"ImageMagick compression successful: {file_size / 1024:.2f}KB -> {new_size / 1024:.2f}KB")
+        else:
+            logger.warning(f"ImageMagick compression failed, image saved as-is")
             
     except Exception as e:
-        # Log error but don't break the save
-        logger.error(f"Error in compress_abonent_image signal for PINFL {instance.pinfl}: {str(e)}", exc_info=True)
-        # Don't raise exception - allow save to continue even if compression fails
+        logger.error(f"Error in post_save compression for PINFL {instance.pinfl}: {str(e)}", exc_info=True)

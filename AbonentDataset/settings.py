@@ -22,6 +22,7 @@ SECRET_KEY = "django-insecure-dev-key-change-later"
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
+    'ef0af17c44be.ngrok-free.app',
 ]
 
 # =============================================================================
@@ -33,7 +34,9 @@ SECURE_PROXY_SSL_HEADER = None
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-CSRF_TRUSTED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = [
+    'https://ef0af17c44be.ngrok-free.app',
+]
 
 # =============================================================================
 # APPLICATIONS

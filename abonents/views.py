@@ -395,14 +395,8 @@ def inspector_abonent_add(request):
         form = AbonentForm(request.POST, request.FILES, inspektor=inspektor)
         if form.is_valid():
             abonent = form.save(commit=False)
-            # If inspector uploaded an image, fix rotation before saving
-            if request.FILES.get('rasm'):
-                try:
-                    fixed = compress_image(request.FILES.get('rasm'), fix_rotation=True)
-                    abonent.rasm = fixed
-                except Exception:
-                    # If fix fails, continue with original file
-                    pass
+            # Save image as-is without rotation or compression to prevent rotation issues
+            # Image is saved in original form uploaded by inspector
             # Auto-set tuman from inspector
             if inspektor.tuman:
                 abonent.tuman = inspektor.tuman
@@ -428,13 +422,7 @@ def inspector_abonent_edit(request, pk):
         form = AbonentForm(request.POST, request.FILES, instance=abonent, inspektor=inspektor)
         if form.is_valid():
             abonent = form.save(commit=False)
-            # If inspector replaced the image, fix rotation before saving
-            if request.FILES.get('rasm'):
-                try:
-                    fixed = compress_image(request.FILES.get('rasm'), fix_rotation=True)
-                    abonent.rasm = fixed
-                except Exception:
-                    pass
+            # Save image as-is without rotation or compression to prevent rotation issues
             # Ensure tuman is set from inspector if not already set
             if inspektor.tuman and not abonent.tuman:
                 abonent.tuman = inspektor.tuman

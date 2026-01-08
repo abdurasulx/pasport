@@ -27,7 +27,7 @@
             <select name="tuman" class="form-control" style="width: 200px;" onchange="this.form.submit()">
                 <option value="">Barcha tumanlar</option>
                 {% for tuman in tumanlar %}
-                <option value="{{ tuman.id }}" {% if selected_tuman==tuman.id %}selected{% endif %}>
+                <option value="{{ tuman.id }}" {% if selected_tuman == tuman.id %}selected{% endif %}>
                     {{ tuman.nomi }}
                 </option>
                 {% endfor %}
@@ -36,7 +36,7 @@
             <select name="mahalla" class="form-control" style="width: 200px;">
                 <option value="">Barcha mahallalar</option>
                 {% for mahalla in mahallalar %}
-                <option value="{{ mahalla.id }}" {% if selected_mahalla==mahalla.id %}selected{% endif %}>
+                <option value="{{ mahalla.id }}" {% if selected_mahalla == mahalla.id %}selected{% endif %}>
                     {{ mahalla.nomi }}
                 </option>
                 {% endfor %}
@@ -45,7 +45,7 @@
             <select name="inspektor" class="form-control" style="width: 200px;">
                 <option value="">Barcha inspektorlar</option>
                 {% for insp in inspektorlar %}
-                <option value="{{ insp.id }}" {% if selected_inspektor==insp.id %}selected{% endif %}>
+                <option value="{{ insp.id }}" {% if selected_inspektor == insp.id %}selected{% endif %}>
                     {{ insp.user.get_full_name|default:insp.user.username }}
                 </option>
                 {% endfor %}
@@ -53,8 +53,8 @@
 
             <select name="pinfl_status" class="form-control" style="width: 200px;">
                 <option value="">Barchasi</option>
-                <option value="bound" {% if pinfl_status=='bound' %}selected{% endif %}>Bog'langan</option>
-                <option value="unbound" {% if pinfl_status=='unbound' %}selected{% endif %}>Bog'lanmagan</option>
+                <option value="bound" {% if pinfl_status == 'bound' %}selected{% endif %}>Bog'langan</option>
+                <option value="unbound" {% if pinfl_status == 'unbound' %}selected{% endif %}>Bog'lanmagan</option>
             </select>
 
             <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Qidirish</button>
