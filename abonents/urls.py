@@ -66,4 +66,7 @@ custom_admin_patterns = [
     
     # Image fixing
     path('rasmlarni-tuzatish/', views.admin_fix_images, name='admin-fix-images'),
+    
+    # Daily Reports
+    path('hisobot/', views.admin_daily_reports, name='admin-daily-reports'),
 ]

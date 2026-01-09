@@ -1250,3 +1250,70 @@ def admin_fix_images(request):
     # GET request - show the page with button
     return render(request, 'admin_custom/fix_images.html')
 
+
+@admin_required
+def admin_daily_reports(request):
+    """Kunlik hisobot - tuman va inspektor bo'yicha."""
+    from django.utils import timezone
+    from django.db.models import Q, Count
+    
+    # Get all tumans for dropdown
+    tumanlar = Tuman.objects.all().order_by('nomi')
+    
+    # Get selected tuman from request
+    selected_tuman_id = request.GET.get('tuman')
+    selected_tuman = None
+    tuman_stats = None
+    inspector_stats = []
+    
+    if selected_tuman_id:
+        try:
+            selected_tuman = Tuman.objects.get(pk=selected_tuman_id)
+            
+            # Today's date
+            today = timezone.now().date()
+            
+            # Get today's abonents for this tuman
+            today_abonents = Abonent.objects.filter(
+                yaratilgan_vaqt__date=today,
+                tuman=selected_tuman
+            )
+            
+            # Tuman statistics
+            total = today_abonents.count()
+            boglangan = today_abonents.filter(abonent_kod__isnull=False).count()
+            boglanmagan = today_abonents.filter(abonent_kod__isnull=True).count()
+            
+            tuman_stats = {
+                'total': total,
+                'boglangan': boglangan,
+                'boglanmagan': boglanmagan,
+            }
+            
+            # Inspector statistics
+            inspectors = Inspektor.objects.filter(tuman=selected_tuman)
+            
+            for inspector in inspectors:
+                inspector_abonents = today_abonents.filter(inspektor=inspector)
+                total_ins = inspector_abonents.count()
+                
+                if total_ins > 0:  # Only show inspectors who uploaded today
+                    inspector_stats.append({
+                        'inspektor': inspector,
+                        'total': total_ins,
+                        'boglangan': inspector_abonents.filter(abonent_kod__isnull=False).count(),
+                        'boglanmagan': inspector_abonents.filter(abonent_kod__isnull=True).count(),
+                    })
+            
+        except Tuman.DoesNotExist:
+            pass
+    
+    context = {
+        'tumanlar': tumanlar,
+        'selected_tuman': selected_tuman,
+        'tuman_stats': tuman_stats,
+        'inspector_stats': inspector_stats,
+        'today': timezone.now().date(),
+    }
+    
+    return render(request, 'admin_custom/daily_reports.html', context)

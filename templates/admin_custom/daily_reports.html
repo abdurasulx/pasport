@@ -1,0 +1,153 @@
+{% extends 'admin_custom/base.html' %}
+
+{% block title %}Kunlik Hisobot{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-bar-chart-line me-2"></i>
+                        Kunlik Hisobot
+                    </h4>
+                    <p class="mb-0 mt-2 opacity-75">
+                        <i class="bi bi-calendar-date"></i> {{ today|date:"d.m.Y" }}
+                    </p>
+                </div>
+                <div class="card-body">
+                    <!-- Tuman Selector -->
+                    <form method="GET" class="mb-4">
+                        <div class="row align-items-end">
+                            <div class="col-md-6">
+                                <label for="tuman" class="form-label fw-bold">Tumanni tanlang:</label>
+                                <select name="tuman" id="tuman" class="form-select form-select-lg"
+                                    onchange="this.form.submit()">
+                                    <option value="">-- Tumanni tanlang --</option>
+                                    {% for tuman in tumanlar %}
+                                    <option value="{{ tuman.id }}" {% if selected_tuman and tuman.id == selected_tuman.id %}selected{% endif %}>
+                                        {{ tuman.nomi }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    {% if selected_tuman %}
+                    <hr class="my-4">
+
+                    <!-- Tuman Statistics -->
+                    <div class="mb-4">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-geo-alt-fill text-primary"></i>
+                            {{ selected_tuman.nomi }} - Umumiy Hisobot
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <h2 class="mb-0 text-primary">{{ tuman_stats.total }}</h2>
+                                        <p class="mb-0 text-muted">Bugun qo'shilgan</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-success">
+                                    <div class="card-body text-center">
+                                        <h2 class="mb-0 text-success">{{ tuman_stats.boglangan }}</h2>
+                                        <p class="mb-0 text-muted">Bog'langan</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-warning">
+                                    <div class="card-body text-center">
+                                        <h2 class="mb-0 text-warning">{{ tuman_stats.boglanmagan }}</h2>
+                                        <p class="mb-0 text-muted">Bog'lanmagan</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inspector Statistics -->
+                    {% if inspector_stats %}
+                    <hr class="my-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-people-fill text-primary"></i>
+                        Inspektor bo'yicha Hisobot
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Inspektor</th>
+                                    <th class="text-center">Yuklagan</th>
+                                    <th class="text-center">Bog'langan</th>
+                                    <th class="text-center">Qoldi</th>
+                                    <th class="text-center">Foiz</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in inspector_stats %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <strong>{{
+                                            stat.inspektor.user.get_full_name|default:stat.inspektor.user.username
+                                            }}</strong>
+                                        <br>
+                                        <small class="text-muted">@{{ stat.inspektor.user.username }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary fs-6">{{ stat.total }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success fs-6">{{ stat.boglangan }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning text-dark fs-6">{{ stat.boglanmagan }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% widthratio stat.boglangan stat.total 100 as percentage %}
+                                        <div class="progress" style="height: 25px;">
+                                            <div class="progress-bar bg-success" role="progressbar"
+                                                style="width: {{ percentage }}%;" aria-valuenow="{{ percentage }}"
+                                                aria-valuemin="0" aria-valuemax="100">
+                                                {{ percentage }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light fw-bold">
+                                <tr>
+                                    <td colspan="2">JAMI</td>
+                                    <td class="text-center">{{ tuman_stats.total }}</td>
+                                    <td class="text-center text-success">{{ tuman_stats.boglangan }}</td>
+                                    <td class="text-center text-warning">{{ tuman_stats.boglanmagan }}</td>
+                                    <td class="text-center">
+                                        {% widthratio tuman_stats.boglangan tuman_stats.total 100 as total_percentage %}
+                                        {{ total_percentage }}%
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Bugun hech qanday ma'lumot yuklanmagan.
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
